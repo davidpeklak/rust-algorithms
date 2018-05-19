@@ -5,6 +5,6 @@ authors = ["David Peklak <dpeklak@gmail.com>"]
 
 [lib]
 name = "algorithms"
-path = "src/lib.rs"
+path = "src/lib/lib.rs"
 
 [dependencies]

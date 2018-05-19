@@ -8,7 +8,7 @@ fn main() {
     println!("Enter size:");
     let size = read_i32();
 
-    let mut vec: Vec<u32> = QuickFind::new(size as usize);
+    let mut vec: Vec<usize> = QuickFind::new(size as usize);
 
     println!("{:?}", vec);
 
