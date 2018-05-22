@@ -1,4 +1,15 @@
-/// a trait that exposes the methods of the quick-find algorithm
+//! implements the quick-find algorithm
+//! # Example
+//! ```
+//! use algorithms::quick_find::QuickFind;
+//! let mut vec: Vec<usize> = QuickFind::new(3);
+//! assert!(!vec.is_connected(0, 2));
+//! vec.connect(0, 1);
+//! vec.connect(1, 2);
+//! assert!(vec.is_connected(0, 2));
+//! ```
+
+/// exposes the methods of the quick-find algorithm
 pub trait QuickFind {
     /// the type of the identifier of elements
     type Name;

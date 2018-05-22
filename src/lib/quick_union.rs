@@ -1,4 +1,15 @@
-/// a trait that exposes the methods of the quick-unnion algorithm
+//! implements the quick-union algorithm
+//! # Example
+//! ```
+//! use algorithms::quick_union::QuickUnion;
+//! let mut vec: Vec<usize> = QuickUnion::new(3);
+//! assert!(!vec.is_connected(0, 2));
+//! vec.connect(0, 1);
+//! vec.connect(1, 2);
+//! assert!(vec.is_connected(0, 2));
+//! ```
+
+/// exposes the methods of the quick-union algorithm
 pub trait QuickUnion {
     /// the type of the identifier of elements
     type Name;
