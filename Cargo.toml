@@ -9,3 +9,4 @@ path = "src/lib/lib.rs"
 
 [dependencies]
 rand = "0.5"
+stopwatch = "0.0.7"
