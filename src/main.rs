@@ -1,33 +1,32 @@
 extern crate algorithms;
+extern crate rand;
 
+use algorithms::percolation::{Percolation, PercolationState};
+use rand::prelude::*;
 use std::io;
 
-use algorithms::quick_find::QuickFind;
-
 fn main() {
-    println!("Enter size:");
-    let size = read_i32();
-
-    let mut vec: Vec<usize> = QuickFind::new(size as usize);
-
-    println!("{:?}", vec);
-
     loop {
-        println!("Enter first:");
-        let first = read_i32();
-        if first < 0 {
+        println!("Enter size:");
+        let size = read_i32();
+        if size < 0 {
             break;
         }
 
-        println!("Enter second:");
-        let second = read_i32();
+        let mut perc: PercolationState = Percolation::new(size as usize);
 
-        let connected = vec.is_connected(first as usize, second as usize);
-        println!("{} and {} are {} connected", first, second, if connected {""} else {"not"});
+        let mut rng = thread_rng();
 
-        vec.connect(first as usize, second as usize);
+        while !perc.percolates() {
+            let row = rng.gen_range(0, size as usize);
+            let col = rng.gen_range(0, size as usize);
 
-        println!("{:?}", vec);
+            perc.open(row, col);
+        }
+
+        println!("{}", perc);
+        let open_ratio = perc.number_of_open_sites() as f64 / (size * size) as f64;
+        println!("open ratio: {}", open_ratio);
     }
 }
 

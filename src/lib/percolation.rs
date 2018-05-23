@@ -2,10 +2,22 @@
 //! # Example
 //! ```
 //! use algorithms::percolation::{Percolation, PercolationState};
-//! let perc: PercolationState = Percolation::new(10);
+//! let mut perc: PercolationState = Percolation::new(3);
+//!
+//! assert!(!perc.percolates());
+//!
+//! perc.open(0, 2);
+//! perc.open(1, 0);
+//! perc.open(1, 1);
+//! perc.open(1, 2);
+//! perc.open(2, 0);
+//!
+//! assert!(perc.percolates());
+//! println!("{}", perc);
 //! ```
 
 use super::weighted_quick_union::{WeightedQuickUnion, WQU};
+use std::fmt;
 
 pub trait Percolation {
     /// create n-by-n grid, with all sites blocked
@@ -149,6 +161,30 @@ impl Percolation for PercolationState {
         let virtual_top = self.site_to_index(Site::VirtualTop);
         let virtual_bottom = self.site_to_index(Site::VirtualBottom);
         self.wqu.is_connected(virtual_top, virtual_bottom)
+    }
+}
+
+impl fmt::Display for PercolationState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        for row in 0..self.size {
+            for col in 0..self.size {
+                let index = self.site_to_index(Site::Coord{row, col});
+                let site_state = &self.site_states[index];
+                let symbol = if *site_state == SiteState::Open {
+                    let virtual_top_index = self.site_to_index(Site::VirtualTop);
+                    if self.wqu.is_connected(index, virtual_top_index) {
+                        'O'
+                    } else {
+                        '#'
+                    }
+                } else {
+                    '.'
+                };
+                write!(f, "{}", symbol)?;
+            }
+            write!(f, "\n")?;
+        }
+        Ok(())
     }
 }
 

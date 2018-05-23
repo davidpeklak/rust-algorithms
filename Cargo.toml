@@ -8,3 +8,4 @@ name = "algorithms"
 path = "src/lib/lib.rs"
 
 [dependencies]
+rand = "0.5"
