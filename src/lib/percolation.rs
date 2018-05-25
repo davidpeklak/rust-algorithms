@@ -16,7 +16,7 @@
 //! println!("{}", perc);
 //! ```
 
-use super::weighted_quick_union::{WeightedQuickUnion, WQU};
+use super::quick_union::{QuickUnion};
 use std::fmt;
 
 pub trait Percolation {
@@ -50,7 +50,7 @@ enum SiteState {
 
 pub struct PercolationState {
     size: usize,
-    wqu: WQU,
+    wqu: Vec<usize>,
     site_states: Vec<SiteState>,
     open_count: usize
 }
@@ -121,7 +121,7 @@ impl Percolation for PercolationState {
 
         let mut new_perc_state = PercolationState {
             size,
-            wqu: WeightedQuickUnion::new(vec_size),
+            wqu: QuickUnion::new(vec_size),
             site_states: vec![SiteState::Full; vec_size],
             open_count: 0
         };
@@ -282,5 +282,28 @@ mod tests {
         perc.open(2, 0);
 
         assert!(perc.percolates());
+    }
+}
+
+pub mod observable {
+    extern crate rand;
+
+    use performance::PerformanceObservable;
+    use super::{Percolation, PercolationState};
+    use self::rand::{Rng, ThreadRng};
+
+    impl PerformanceObservable for PercolationState {
+        fn prepare(size: usize, _rng: &mut ThreadRng) -> Self {
+            Percolation::new(size)
+        }
+
+        fn run(&mut self, size: usize, rng: &mut ThreadRng) {
+            while !self.percolates() {
+                let row = rng.gen_range(0, size);
+                let col = rng.gen_range(0, size);
+
+                self.open(row, col);
+            }
+        }
     }
 }
