@@ -1,4 +1,10 @@
-//! defines an algorithm performance observation framework
+//! Measure the growth rate of algorithms
+//! # Example
+//! ```
+//! use algorithms::performance;
+//! use algorithms::performance::example;
+//! let result = performance::observe::<Vec<i32>>(1000i64);
+//! ```
 
 extern crate rand;
 extern crate stopwatch;
@@ -6,15 +12,22 @@ extern crate stopwatch;
 use self::rand::{ThreadRng, thread_rng};
 use self::stopwatch::Stopwatch;
 
-
+/// An algorithm that can be observed in terms of execution time
 pub trait PerformanceObservable {
+
+    /// prepare a data-structure (with randomized content) of the given size
     fn prepare(size: usize, rng: &mut ThreadRng) -> Self;
 
+    /// run an algorithm against the prepared data-structure
     fn run(&mut self, size: usize, rng: &mut ThreadRng);
 }
 
+/// observes the execution time of an algorithm, by doubling
+/// the size of the data-structure (of type PO) that the algorithm works on
+/// returns the ratio of the execution time of the last ran and the run
+/// before that
 pub fn observe<PO>(max_millis: i64) -> f64
-where PO: PerformanceObservable {
+    where PO: PerformanceObservable {
     let mut rng = thread_rng();
     let mut stopwatch = Stopwatch::new();
     let mut elapsed_ms = 0i64;
@@ -47,4 +60,23 @@ where PO: PerformanceObservable {
     }
 
     ratio
+}
+
+pub mod example {
+    use super::PerformanceObservable;
+    use super::rand::{Rng, ThreadRng};
+
+    impl PerformanceObservable for Vec<i32> {
+        fn prepare(size: usize, _rng: &mut ThreadRng) -> Self {
+            vec![0i32; size]
+        }
+
+        fn run(&mut self, size: usize, rng: &mut ThreadRng) {
+            for i in 0..size {
+                for j in i..size {
+                    self[j] = rng.gen_range(0, 10000);
+                }
+            }
+        }
+    }
 }
