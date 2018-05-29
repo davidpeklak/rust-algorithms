@@ -10,3 +10,5 @@ pub mod weighted_quick_union;
 pub mod percolation;
 
 pub mod performance;
+
+pub mod linked_list;
