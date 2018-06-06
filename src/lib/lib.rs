@@ -12,3 +12,5 @@ pub mod percolation;
 pub mod performance;
 
 pub mod linked_list;
+
+pub mod deque;
