@@ -1,6 +1,21 @@
+//! provides an implementation for a double-ended queue (Deque)
+//! #Example
+//! ```
+//! use algorithms::deque::{Deque, DequeT};
+//!
+//! let mut deque = Deque::<i32>::new();
+//! deque.add_first(1);
+//! deque.add_first(2);
+//!
+//! assert_eq!(deque.size(), 2);
+//! assert_eq!(deque.remove_last(), Option::Some(1));
+//! assert_eq!(deque.remove_last(), Option::Some(2));
+//! assert_eq!(deque.size(), 0);
+//! assert_eq!(deque.remove_last(), Option::None);
+//! ```
+
 use std::option::Option::*;
 use std::ptr::NonNull;
-
 
 pub trait DequeT {
     type Item;
@@ -142,9 +157,10 @@ fn deallocate_and_return_item<Item>(nnn: NonNull<Node<Item>>) -> Item {
 
 #[cfg(test)]
 mod tests {
+    use std::mem;
     use std::ptr::NonNull;
     use std::option::Option::*;
-    use super::{Deque, DequeT};
+    use super::{Deque, DequeT, Node};
 
 
     fn non_null_from_box(bx: Box<i32>) -> Option<NonNull<i32>> {
@@ -157,6 +173,13 @@ mod tests {
             None => None,
             Some(nn) => Some(unsafe { Box::from_raw(nn.as_ptr()) })
         }
+    }
+
+    // size requirements of the deque in Programming Assignment 2 of the course
+    #[test]
+    fn sizes() {
+        assert!(mem::size_of::<Node<i64>>() <= 48);
+        assert!(mem::size_of::<Deque<i64>>() <= 192);
     }
 
     #[test]

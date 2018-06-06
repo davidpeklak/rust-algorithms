@@ -26,7 +26,7 @@ pub trait PerformanceObservable {
 /// the size of the data-structure (of type PO) that the algorithm works on
 /// returns the ratio of the execution time of the last ran and the run
 /// before that
-pub fn observe<PO>(max_millis: i64) -> f64
+pub fn observe<PO>(max_millis: i64, max_size: Option<usize>) -> f64
     where PO: PerformanceObservable {
     let mut rng = thread_rng();
     let mut stopwatch = Stopwatch::new();
@@ -35,7 +35,7 @@ pub fn observe<PO>(max_millis: i64) -> f64
     let mut ratio = 0f64;
     let mut size = 1usize;
 
-    while expected_ms <= max_millis as f64 {
+    while expected_ms <= max_millis as f64 && max_size.iter().all(|ms| *ms > size) {
         let mut perf_obs: PO = PerformanceObservable::prepare(size, &mut rng);
 
         stopwatch.reset();
