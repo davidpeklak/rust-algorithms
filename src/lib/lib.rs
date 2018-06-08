@@ -14,3 +14,5 @@ pub mod performance;
 pub mod linked_list;
 
 pub mod deque;
+
+pub mod selection_sort;
