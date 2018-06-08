@@ -3,7 +3,7 @@
 //! ```
 //! use algorithms::performance;
 //! use algorithms::performance::example;
-//! let result = performance::observe::<Vec<i32>>(1000i64);
+//! let result = performance::observe::<Vec<i32>>(1000i64, Option::None);
 //! ```
 
 extern crate rand;

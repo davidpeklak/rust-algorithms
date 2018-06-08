@@ -41,6 +41,13 @@ impl<Item> Deque<Item> {
             last: None,
         }
     }
+
+    pub fn iter<'a>(&'a self) -> DequeIter<'a, Item> {
+        DequeIter {
+            next: self.first,
+            _deque: &self,
+        }
+    }
 }
 
 impl<Item> DequeT for Deque<Item> {
@@ -115,6 +122,12 @@ impl<Item> DequeT for Deque<Item> {
     }
 }
 
+impl<Item> Drop for Deque<Item> {
+    fn drop(&mut self) {
+        while self.remove_first().is_some() {}
+    }
+}
+
 struct Node<Item> {
     val: Item,
     next: Option<NonNull<Node<Item>>>,
@@ -142,6 +155,27 @@ impl<Item> Node<Item> {
     }
 }
 
+pub struct DequeIter<'a, Item>
+    where Item: 'a {
+    next: Option<NonNull<Node<Item>>>,
+    _deque: &'a Deque<Item>,
+}
+
+impl<'a, Item> Iterator for DequeIter<'a, Item> {
+    type Item = &'a Item;
+
+    fn next(&mut self) -> Option<&'a Item> {
+        match self.next.clone() {
+            None => None,
+            Some(ref nnn) => {
+                let node = unsafe { &*nnn.as_ptr() };
+                self.next = node.next;
+                Some(&node.val)
+            }
+        }
+    }
+}
+
 fn box_and_get_ptr<Item>(node: Node<Item>) -> Option<NonNull<Node<Item>>> {
     let x = Box::new(node);
     let raw = Box::into_raw(x);
@@ -157,6 +191,7 @@ fn deallocate_and_return_item<Item>(nnn: NonNull<Node<Item>>) -> Item {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write;
     use std::mem;
     use std::ptr::NonNull;
     use std::option::Option::*;
@@ -291,5 +326,21 @@ mod tests {
         assert_eq!(deque.remove_last(), Some(1));
         assert_eq!(deque.size(), 0);
         assert_eq!(deque.remove_last(), None);
+    }
+
+    #[test]
+    fn iter() {
+        let mut deque = Deque::<i32>::new();
+        deque.add_last(1);
+        deque.add_last(2);
+        deque.add_first(3);
+
+        let mut output = String::new();
+
+        for i in deque.iter() {
+            write!(&mut output, "{},", i).unwrap();
+        }
+
+        assert_eq!(output, "3,1,2,")
     }
 }
