@@ -1,4 +1,14 @@
+//! implements the selection sort algorithm
+//! # Example
+//! ```
+//! use algorithms::selection_sort::selection_sort;
+//!
+//! let mut vec = vec![3,2,4,5,1];
+//! selection_sort(&mut vec);
+//! assert_eq!(vec, vec![1,2,3,4,5]);
+//! ```
 
+/// sort a Vec with the selection sort algorithm
 pub fn selection_sort<Item>(vec: &mut Vec<Item>)
     where Item: PartialOrd {
     let size = vec.len();
@@ -19,45 +29,20 @@ pub fn selection_sort<Item>(vec: &mut Vec<Item>)
 mod test {
     extern crate rand;
 
-    use self::rand::{Rng, thread_rng};
-
+    use self::rand::thread_rng;
     use super::selection_sort;
-
-    fn is_sorted<Item>(vec: &Vec<Item>) -> bool
-        where Item: PartialOrd {
-        if vec.len() > 1 {
-            for i in 0..vec.len() - 1 {
-                if vec[i] > vec[i + 1] {
-                    return false;
-                }
-            }
-        }
-        true
-    }
+    use ::is_sorted::sort_some;
 
     #[test]
-    fn test_is_sorted() {
-        assert!(is_sorted(&vec![1, 2, 5, 8, 17, 26]));
-        assert!(!is_sorted(&vec![1, 2, 5, 8, 17, 26, 3]));
-    }
-
-    #[test]
-    fn vev_swap() {
+    fn vec_swap() {
         let mut vec = vec![1, 2, 3, 4];
         vec.swap(0, 2);
         assert_eq!(vec, vec![3, 2, 1, 4]);
     }
 
     #[test]
-    fn sort_some() {
+    fn selection_sort_some() {
         let mut rng = thread_rng();
-        for size in (0..20).map(|x| x * x) {
-            let mut vec = vec![0u8; size];
-            for i in 0..size {
-                vec[i] = rng.gen();
-            }
-            selection_sort(&mut vec);
-            assert!(is_sorted(&vec));
-        }
+        sort_some::<u32>(&mut rng, selection_sort);
     }
 }

@@ -16,3 +16,8 @@ pub mod linked_list;
 pub mod deque;
 
 pub mod selection_sort;
+
+pub mod insertion_sort;
+
+#[cfg(test)]
+pub mod is_sorted;
