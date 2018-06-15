@@ -19,5 +19,7 @@ pub mod selection_sort;
 
 pub mod insertion_sort;
 
+pub mod step;
+
 #[cfg(test)]
 pub mod is_sorted;
