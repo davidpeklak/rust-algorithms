@@ -21,5 +21,9 @@ pub mod insertion_sort;
 
 pub mod step;
 
+pub mod index_ops;
+
+pub mod shell_sort;
+
 #[cfg(test)]
 pub mod is_sorted;

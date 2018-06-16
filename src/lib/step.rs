@@ -16,12 +16,13 @@
 //! ```
 
 use std::ops::{Index, IndexMut};
+use ::index_ops::{Length, Swap};
 
 pub struct Step<'a, Underl>
     where Underl: 'a {
     underl: &'a mut Underl,
     step: usize,
-    offset: usize
+    offset: usize,
 }
 
 impl<'a, Underl, Output> Index<usize> for Step<'a, Underl>
@@ -46,15 +47,22 @@ impl<'a, Underl> Step<'a, Underl> {
     }
 }
 
-impl<'a, Item> Step<'a, Vec<Item>> {
-    pub fn len(&self) -> usize {
+impl<'a, Item> Length for Step<'a, Vec<Item>> {
+    fn length(&self) -> usize {
         (self.underl.len() - self.offset + self.step - 1) / self.step
+    }
+}
+
+impl<'a, Item> Swap<Item> for Step<'a, Vec<Item>> {
+    fn swap(&mut self, a: usize, b: usize) {
+        self.underl.swap(self.offset + a * self.step, self.offset + b * self.step)
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::Step;
+    use ::index_ops::Length;
 
     #[test]
     fn index() {
@@ -89,23 +97,23 @@ mod test {
     #[test]
     fn len() {
         let mut vec = vec![1, 2, 3, 4];
-        assert_eq!(Step::new(&mut vec, 1, 0).len(), 4);
-        assert_eq!(Step::new(&mut vec, 2, 0).len(), 2);
-        assert_eq!(Step::new(&mut vec, 3, 0).len(), 2);
-        assert_eq!(Step::new(&mut vec, 4, 0).len(), 1);
-        assert_eq!(Step::new(&mut vec, 5, 0).len(), 1);
-        assert_eq!(Step::new(&mut vec, 20, 0).len(), 1);
+        assert_eq!(Step::new(&mut vec, 1, 0).length(), 4);
+        assert_eq!(Step::new(&mut vec, 2, 0).length(), 2);
+        assert_eq!(Step::new(&mut vec, 3, 0).length(), 2);
+        assert_eq!(Step::new(&mut vec, 4, 0).length(), 1);
+        assert_eq!(Step::new(&mut vec, 5, 0).length(), 1);
+        assert_eq!(Step::new(&mut vec, 20, 0).length(), 1);
     }
 
     #[test]
     fn len_offset() {
         let mut vec = vec![1, 2, 3, 4, 5, 6];
-        assert_eq!(Step::new(&mut vec, 1, 2).len(), 4);
-        assert_eq!(Step::new(&mut vec, 2, 2).len(), 2);
-        assert_eq!(Step::new(&mut vec, 3, 2 ).len(), 2);
-        assert_eq!(Step::new(&mut vec, 4, 2).len(), 1);
-        assert_eq!(Step::new(&mut vec, 5, 2).len(), 1);
-        assert_eq!(Step::new(&mut vec, 20, 2).len(), 1);
+        assert_eq!(Step::new(&mut vec, 1, 2).length(), 4);
+        assert_eq!(Step::new(&mut vec, 2, 2).length(), 2);
+        assert_eq!(Step::new(&mut vec, 3, 2).length(), 2);
+        assert_eq!(Step::new(&mut vec, 4, 2).length(), 1);
+        assert_eq!(Step::new(&mut vec, 5, 2).length(), 1);
+        assert_eq!(Step::new(&mut vec, 20, 2).length(), 1);
     }
 }
 

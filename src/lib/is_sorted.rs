@@ -1,11 +1,15 @@
 extern crate rand;
 
 use self::rand::{ThreadRng, Rng};
+use std::ops::Index;
+use ::index_ops::Length;
 
-pub fn is_sorted<Item>(vec: &Vec<Item>) -> bool
-    where Item: PartialOrd {
-    if vec.len() > 1 {
-        for i in 0..vec.len() - 1 {
+pub fn is_sorted<Coll, Item>(vec: &Coll) -> bool
+    where Coll: Index<usize, Output=Item> + Length,
+          Item: PartialOrd {
+    let len = vec.length();
+    if len > 1 {
+        for i in 0..len - 1 {
             if vec[i] > vec[i + 1] {
                 return false;
             }
