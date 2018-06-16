@@ -26,7 +26,7 @@ impl PerformanceObservable for VecWrap {
 
 #[test]
 fn test_performance() {
-    let factor = observe::<VecWrap>(5000i64, None);
+    let factor = observe::<VecWrap>(20000i64, None);
     println!("Factor insertion sort = {}", factor);
 
     assert!(factor > 3.5);

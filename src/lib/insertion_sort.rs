@@ -1,6 +1,26 @@
-pub fn insertion_sort<Item>(vec: &mut Vec<Item>)
-    where Item: PartialOrd {
-    let size = vec.len();
+//! implements the selection sort algorithm
+//! # Example
+//! ```
+//! use algorithms::insertion_sort::insertion_sort;
+//!
+//! let mut vec = vec![3,2,4,5,1];
+//! insertion_sort(&mut vec);
+//! assert_eq!(vec, vec![1,2,3,4,5]);
+//! ```
+
+use std::ops::{Index, IndexMut};
+use ::index_ops::{Length, Swap};
+
+/// Sort types that implement [`Index`],  [`IndexMut`], [`Length`] and [`Swap`] with the selection sort algorithm.
+///
+/// [`Index`]: https://doc.rust-lang.org/std/ops/trait.Index.html
+/// [`IndexMut`]: https://doc.rust-lang.org/std/ops/trait.IndexMut.html
+/// [`Length`]: ../index_ops/trait.Length.html
+/// [`Swap`]: ../index_ops/trait.Swap.html
+pub fn insertion_sort<Coll, Item>(vec: &mut Coll)
+    where Coll: Index<usize, Output=Item> + IndexMut<usize, Output=Item> + Length + Swap<Item>,
+          Item: PartialOrd {
+    let size = vec.length();
     if size > 1 {
         for i in 1..size {
             let mut j = i;
