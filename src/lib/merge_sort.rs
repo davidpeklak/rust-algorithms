@@ -63,8 +63,12 @@ fn do_merge<Item>(vec: &mut Vec<Item>, aux_vec: &mut Vec<Item>, lo: usize, hi: u
 
 #[cfg(test)]
 mod test {
+extern crate rand;
+
     use super::{merge, merge_sort};
     use is_sorted::is_sorted;
+    use self::rand::thread_rng;
+    use ::is_sorted::sort_some;
 
     #[test]
     fn merge_some() {
@@ -78,5 +82,11 @@ mod test {
         let mut vec = vec![7, 3, 5, 6, 2, 5, 1, 9];
         merge_sort(&mut vec);
         assert!(is_sorted(&vec));
+    }
+
+    #[test]
+    fn merge_sort_some() {
+        let mut rng = thread_rng();
+        sort_some::<u32>(&mut rng, merge_sort);
     }
 }
