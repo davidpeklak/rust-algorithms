@@ -25,5 +25,7 @@ pub mod index_ops;
 
 pub mod shell_sort;
 
+pub mod merge_sort;
+
 #[cfg(test)]
 pub mod is_sorted;
