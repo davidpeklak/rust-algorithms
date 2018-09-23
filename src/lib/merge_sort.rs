@@ -1,3 +1,4 @@
+/// Sorts a vector with the merge-sort algorithm
 pub fn merge_sort<Item>(vec: &mut Vec<Item>)
     where Item: PartialOrd + Copy {
     let mut aux_vec = vec.clone();

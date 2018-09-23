@@ -27,5 +27,7 @@ pub mod shell_sort;
 
 pub mod merge_sort;
 
+pub mod knuth_shuffle;
+
 #[cfg(test)]
 pub mod is_sorted;
