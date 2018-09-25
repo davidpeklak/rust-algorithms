@@ -23,6 +23,27 @@ fn sort<Item>(vec: &mut Vec<Item>, lo: usize, hi: usize)
     }
 }
 
+/// selects the kth largest element in a vector
+pub fn quick_select<Item>(vec: &mut Vec<Item>, k: usize, rng: &mut ThreadRng) -> Item
+    where Item: PartialOrd + Copy {
+    knuth_shuffle(vec, rng);
+
+    let mut lo = 0usize;
+    let mut hi = vec.len();
+
+    loop {
+        let l = partition(vec, lo, hi);
+        if l == k {
+            return vec[k];
+        }
+        if l > k {
+            hi = l;
+        } else {
+            lo = l + 1;
+        }
+    }
+}
+
 /// partitions a vector by its first element.
 /// returns the index of that element after partitioning.
 pub fn partition<Item>(vec: &mut Vec<Item>, lo: usize, hi: usize) -> usize
@@ -54,7 +75,7 @@ pub fn partition<Item>(vec: &mut Vec<Item>, lo: usize, hi: usize) -> usize
 
 #[cfg(test)]
 mod tests {
-    use super::{partition, quick_sort};
+    use super::{partition, quick_sort, quick_select};
     use super::rand::thread_rng;
     use ::is_sorted::sort_some;
 
@@ -148,5 +169,26 @@ mod tests {
             quick_sort(vec, &mut rng);
         }
         sort_some::<u32>(&mut rng, da_sort);
+    }
+
+    #[test]
+    fn test_quick_select() {
+        let mut rng = thread_rng();
+
+        let mut vec = vec![1];
+        let result = quick_select(&mut vec, 0, &mut rng);
+        assert_eq!(result, 1);
+
+        let mut vec = vec![3, 2, 6, 1];
+        let result = quick_select(&mut vec, 2, &mut rng);
+        assert_eq!(result, 3);
+
+        let mut vec = vec![3, 2, 3, 6, 3, 7, 3];
+        let result = quick_select(&mut vec, 3, &mut rng);
+        assert_eq!(result, 3);
+
+        let mut vec = vec![3, 2, 3, 6, 3, 7, 3];
+        let result = quick_select(&mut vec, 5, &mut rng);
+        assert_eq!(result, 6);
     }
 }
