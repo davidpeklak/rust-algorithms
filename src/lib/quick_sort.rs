@@ -23,6 +23,26 @@ fn sort<Item>(vec: &mut Vec<Item>, lo: usize, hi: usize)
     }
 }
 
+/// sorts a vector with the three_way_quick_sort algorithm
+pub fn three_way_quick_sort<Item>(vec: &mut Vec<Item>, rng: &mut ThreadRng)
+    where Item: PartialOrd {
+    knuth_shuffle(vec, rng);
+
+    let size = vec.len();
+    three_way_sort(vec, 0, size);
+}
+
+fn three_way_sort<Item>(vec: &mut Vec<Item>, lo: usize, hi: usize)
+    where Item: PartialOrd {
+    if hi <= lo + 1 {
+        return;
+    } else {
+        let (lt, gt) = three_way_partition(vec, lo, hi);
+        three_way_sort(vec, lo, lt);
+        three_way_sort(vec, gt, hi);
+    }
+}
+
 /// selects the kth largest element in a vector
 pub fn quick_select<Item>(vec: &mut Vec<Item>, k: usize, rng: &mut ThreadRng) -> Item
     where Item: PartialOrd + Copy {
@@ -105,7 +125,7 @@ pub fn three_way_partition<Item>(vec: &mut Vec<Item>, lo: usize, hi: usize) -> (
 
 #[cfg(test)]
 mod tests {
-    use super::{partition, three_way_partition, quick_sort, quick_select};
+    use super::{partition, three_way_partition, quick_sort, three_way_quick_sort, quick_select};
     use super::rand::thread_rng;
     use ::is_sorted::sort_some;
 
@@ -306,6 +326,17 @@ mod tests {
         fn da_sort(vec: &mut Vec<u32>) {
             let mut rng = thread_rng();
             quick_sort(vec, &mut rng);
+        }
+        sort_some::<u32>(&mut rng, da_sort);
+    }
+
+    #[test]
+    fn three_way_quick_sort_some() {
+        let mut rng = thread_rng();
+
+        fn da_sort(vec: &mut Vec<u32>) {
+            let mut rng = thread_rng();
+            three_way_quick_sort(vec, &mut rng);
         }
         sort_some::<u32>(&mut rng, da_sort);
     }
