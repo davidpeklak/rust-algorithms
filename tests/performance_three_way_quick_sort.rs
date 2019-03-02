@@ -44,7 +44,7 @@ impl PerformanceObservable for DuplicateKeys {
 #[test]
 fn test_performance() {
     let factor = observe::<VecWrap>(5000i64, None);
-    println!("Factor selection sort = {}", factor);
+    println!("Factor quick sort = {}", factor);
 
     assert!(factor > 2.0);
     assert!(factor < 3.5);
@@ -53,7 +53,7 @@ fn test_performance() {
 #[test]
 fn test_performance_duplicate_keys() {
     let factor = observe::<DuplicateKeys>(5000i64, None);
-    println!("Factor selection sort = {}", factor);
+    println!("Factor quick sort duplicate keys = {}", factor);
 
     assert!(factor > 2.0);
     assert!(factor < 3.5);

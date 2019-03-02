@@ -31,5 +31,7 @@ pub mod knuth_shuffle;
 
 pub mod quick_sort;
 
+pub mod max_pq;
+
 #[cfg(test)]
 pub mod is_sorted;
