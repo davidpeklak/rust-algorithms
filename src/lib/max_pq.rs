@@ -21,7 +21,7 @@ fn parent(k: usize) -> usize {
 // for a binary heap, implemented as a [`Vec`], as described in the course, but starting at index
 // 0, this function returns the children indices of the index k, as a pair.
 fn children(k: usize) -> (usize, usize) {
-    ( ((k + 1) * 2) - 1, ((k + 1) * 2) - 1 + 1 )
+    (((k + 1) * 2) - 1, ((k + 1) * 2) - 1 + 1)
 }
 
 // swims the element at index k, as described in the course.
@@ -39,14 +39,22 @@ fn sink<Item>(vec: &mut Vec<Item>, k: usize)
     where Item: PartialOrd {
     let size = vec.len();
     let mut i = k;
-    while (i + 1) * 2 < size {
+    while (i + 1) * 2 <= size {
         let (child1, child2) = children(i);
         let chosen_child = if child2 < size && vec[child1] < vec[child2] { child2 } else { child1 };
         if vec[i] >= vec[chosen_child] {
-            return
+            return;
         }
         vec.swap(i, chosen_child);
         i = chosen_child;
+    }
+}
+
+pub fn make_heap<Item>(vec: &mut Vec<Item>)
+    where Item: PartialOrd {
+    let size = vec.len();
+    for k in (0..((size + 1 ) / 2)).rev() {
+        sink(vec, k);
     }
 }
 
@@ -64,8 +72,7 @@ impl<Item> MaxPQ for Vec<Item>
         let size = self.len();
         if size <= 1 {
             self.pop()
-        }
-        else {
+        } else {
             self.swap(0, size - 1);
             let rslt = self.pop();
             sink(self, 0);
@@ -84,7 +91,7 @@ impl<Item> MaxPQ for Vec<Item>
 
 #[cfg(test)]
 mod tests {
-    use super::{MaxPQ, parent};
+    use super::{MaxPQ, parent, make_heap, sink};
 
     pub fn is_binary_heap<Item>(vec: &Vec<Item>) -> bool
         where Item: PartialOrd {
@@ -141,7 +148,7 @@ mod tests {
     #[test]
     fn test_del_max() {
         {
-            let mut vec:Vec<i32> = vec!();
+            let mut vec: Vec<i32> = vec!();
             assert_eq!(vec.del_max(), None);
             assert!(is_binary_heap(&vec));
         }
@@ -163,5 +170,64 @@ mod tests {
             assert!(is_binary_heap(&vec));
             assert_eq!(vec.len(), 9);
         }
+    }
+
+    #[test]
+    fn test_manual_sinking() {
+        let mut vec = vec!(1, 89, 4, 78, 4, 9, 346, 9, 3, 56, 2, 56, 2, 6);
+        //              1,
+        //       89,          4,
+        //  78,     4,    9,    346,
+        // 9, 3, 56, 2, 56, 2, 6
+        sink(&mut vec, 6);
+        //              1,
+        //       89,          4,
+        //  78,     4,    9,    346,
+        // 9, 3, 56, 2, 56, 2, 6
+        assert_eq!(vec, vec!(1, 89, 4, 78, 4, 9, 346, 9, 3, 56, 2, 56, 2, 6));
+        sink(&mut vec, 5);
+        //              1,
+        //       89,          4,
+        //  78,     4,   56,    346,
+        // 9, 3, 56, 2, 9, 2, 6
+        assert_eq!(vec, vec!(1, 89, 4, 78, 4, 56, 346, 9, 3, 56, 2, 9, 2, 6));
+        sink(&mut vec, 4);
+        //              1,
+        //       89,         4,
+        //  78,    56,  56,    346,
+        // 9, 3, 4, 2, 9, 2, 6
+        assert_eq!(vec, vec!(1, 89, 4, 78, 56, 56, 346, 9, 3, 4, 2, 9, 2, 6));
+        sink(&mut vec, 3);
+        //              1,
+        //       89,         4,
+        //  78,   56,    56,   346,
+        // 9, 3, 4, 2, 9, 2, 6
+        assert_eq!(vec, vec!(1, 89, 4, 78, 56, 56, 346, 9, 3, 4, 2, 9, 2, 6));
+        sink(&mut vec, 2);
+        //              1,
+        //       89,       346,
+        //  78,    56,  56,    6,
+        // 9, 3, 4, 2, 9, 2, 4
+        assert_eq!(vec, vec!(1, 89, 346, 78, 56, 56, 6, 9, 3, 4, 2, 9, 2, 4));
+        sink(&mut vec, 1);
+        //              1,
+        //       89,       346,
+        //  78,    56,  56,    6,
+        // 9, 3, 4, 2, 9, 2, 4
+        assert_eq!(vec, vec!(1, 89, 346, 78, 56, 56, 6, 9, 3, 4, 2, 9, 2, 4));
+        sink(&mut vec, 0);
+        //            346,
+        //       89,       56,
+        //  78,    56,   9,    6,
+        // 9, 3, 4, 2, 1, 2, 4
+        assert_eq!(vec, vec!(346, 89, 56, 78, 56, 9, 6, 9, 3, 4, 2, 1, 2, 4));
+        assert!(is_binary_heap(&vec));
+    }
+
+    #[test]
+    fn test_make_heap() {
+        let mut vec = vec!(1, 89, 4, 78, 4, 9, 346, 9, 3, 56, 2, 56, 2, 6);
+        make_heap(&mut vec);
+        assert!(is_binary_heap(&vec));
     }
 }
