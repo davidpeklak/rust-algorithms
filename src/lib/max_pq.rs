@@ -34,10 +34,10 @@ fn swim<Item>(vec: &mut Vec<Item>, k: usize)
     }
 }
 
-// sinks the element at index k, as described in the course.
-fn sink<Item>(vec: &mut Vec<Item>, k: usize)
+// sinks the element at index k, as described in the course, only considerung the elements of the
+// vector up to (excluding) size.
+fn sink_with_size<Item>(vec: &mut Vec<Item>, k: usize, size: usize)
     where Item: PartialOrd {
-    let size = vec.len();
     let mut i = k;
     while (i + 1) * 2 <= size {
         let (child1, child2) = children(i);
@@ -50,11 +50,27 @@ fn sink<Item>(vec: &mut Vec<Item>, k: usize)
     }
 }
 
+// sinks the element at index k, as described in the course.
+fn sink<Item>(vec: &mut Vec<Item>, k: usize)
+    where Item: PartialOrd {
+    let size = vec.len();
+    sink_with_size(vec, k, size);
+}
+
 pub fn make_heap<Item>(vec: &mut Vec<Item>)
     where Item: PartialOrd {
     let size = vec.len();
     for k in (0..((size + 1 ) / 2)).rev() {
         sink(vec, k);
+    }
+}
+
+pub fn heap_sort<Item>(vec: &mut Vec<Item>)
+    where Item: PartialOrd {
+    let size = vec.len();
+    for k in (1..size).rev() {
+        vec.swap(0, k);
+        sink_with_size(vec, 0, k);
     }
 }
 
@@ -91,7 +107,8 @@ impl<Item> MaxPQ for Vec<Item>
 
 #[cfg(test)]
 mod tests {
-    use super::{MaxPQ, parent, make_heap, sink};
+    use super::{MaxPQ, parent, make_heap, sink, heap_sort};
+    use ::is_sorted::is_sorted;
 
     pub fn is_binary_heap<Item>(vec: &Vec<Item>) -> bool
         where Item: PartialOrd {
@@ -229,5 +246,14 @@ mod tests {
         let mut vec = vec!(1, 89, 4, 78, 4, 9, 346, 9, 3, 56, 2, 56, 2, 6);
         make_heap(&mut vec);
         assert!(is_binary_heap(&vec));
+    }
+
+    #[test]
+    fn test_heap_sort() {
+        let mut vec = vec!(1, 89, 4, 78, 4, 9, 346, 9, 3, 56, 2, 56, 2, 6);
+        make_heap(&mut vec);
+        assert!(is_binary_heap(&vec));
+        heap_sort(&mut vec);
+        assert!(is_sorted(&mut vec));
     }
 }
