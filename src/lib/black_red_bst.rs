@@ -1,5 +1,8 @@
 //! Implements a black-red-binary-search-tree as described in the course.
+//!
+use std::mem;
 
+#[derive(PartialEq)]
 enum Color {
     Red,
     Black,
@@ -20,11 +23,55 @@ struct Node<Item> {
 
 impl<Item> Link<Item> {
     fn new_red(node: Node<Item>) -> Link<Item> {
-        Link{ to: Box::new(node), color: Red}
+        Link { to: Box::new(node), color: Red }
     }
 
     fn new_black(node: Node<Item>) -> Link<Item> {
-        Link{ to: Box::new(node), color: Black}
+        Link { to: Box::new(node), color: Black }
+    }
+
+    fn value_ref(&self) -> &Item {
+        &self.to.as_ref().value
+    }
+
+    fn value(&self) -> Item
+    where Item: Copy {
+        self.to.as_ref().value
+    }
+
+    fn rotate_left(&mut self) {
+        // get the rigth link out as an Option, if there is one. Self needs to be borrowed
+        // mutably for that, so we have to close the block and continue working with the resulting
+        // option
+        let right_link_opt = {
+            let Link { to, .. } = self;
+            let to_node = to.as_mut();
+            if let Node {
+                right: right @ Some(Link { to: _, color: Red }),
+                ..
+            } = to_node {
+                // replace right by a None, and get it out
+                mem::replace(right, None)
+            } else {
+                None
+            }
+        };
+        // here we have self back, and can work with the option.
+        if let Some(Link { to: right_node, .. }) = right_link_opt {
+            // link the right node into self, and get out self.to
+            let mut left_node = mem::replace(&mut self.to, right_node);
+            // now right_node is consumed, so I need to get it again.
+            let right_node = &mut self.to;
+            let right_node = right_node.as_mut();
+            let middle = mem::replace(&mut right_node.left, Some(Link { to: left_node, color: Red }));
+            // now the left_node is consumed, so I need to get it again.
+            let left_link = &mut right_node.left;
+            if let Some(Link { to: left_node, .. }) = left_link {
+                // this will always be the case, because that is how we constructed it 3 lines above
+                // plug middle into left_node
+                left_node.right = middle;
+            }
+        }
     }
 }
 
@@ -44,8 +91,8 @@ impl<Item> Node<Item>
         match self {
             Node { value: v, left: None, right: None } if *v >= node.value =>
                 self.left = Some(Link::new_red(node)),
-            Node { value: v, left: None, right: None } /* if *v < boxed_node.value */ =>
-                 self.right = Some(Link::new_red(node)),
+            Node { value: _, left: None, right: None } /* if *v < boxed_node.value */ =>
+                self.right = Some(Link::new_red(node)),
             _ => unimplemented!()
         }
     }
@@ -55,7 +102,7 @@ impl<Item> Node<Item>
     }
 
     fn left_value(&self) -> Option<Item>
-    where Item: Copy {
+        where Item: Copy {
         self.left.as_ref().map(|l| l.to.value)
     }
 
@@ -83,8 +130,8 @@ mod tests {
     #[test]
     fn test_left_value_ref() {
         let left_node = Node::new(20);
-        let link = Link{to: Box::new(left_node), color: Red};
-        let node = Node{ value: 30, left: Some(link), right: None};
+        let link = Link { to: Box::new(left_node), color: Red };
+        let node = Node { value: 30, left: Some(link), right: None };
 
         assert_eq!(node.left_value_ref(), Some(&20));
     }
@@ -92,8 +139,8 @@ mod tests {
     #[test]
     fn test_left_value() {
         let left_node = Node::new(20);
-        let link = Link{to: Box::new(left_node), color: Red};
-        let node = Node{ value: 30, left: Some(link), right: None};
+        let link = Link { to: Box::new(left_node), color: Red };
+        let node = Node { value: 30, left: Some(link), right: None };
 
         assert_eq!(node.left_value(), Some(20));
     }
@@ -120,5 +167,21 @@ mod tests {
         node.insert_val(40);
 
         assert_eq!(node.right_value(), Some(40));
+    }
+
+    #[test]
+    fn rotate_left() {
+        let mut node = Node::new(32);
+        node.insert_val(40);
+
+        let mut link = Link::new_black(node);
+
+        link.rotate_left();
+
+        assert_eq!(link.value(), 40);
+        let node = link.to.as_ref();
+        let left_val = node.left.as_ref().unwrap().value();
+        assert_eq!(left_val, 32);
+        assert!(link.to.as_ref().right.is_none());
     }
 }
