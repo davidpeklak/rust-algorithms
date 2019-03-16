@@ -21,7 +21,21 @@ pub struct Node<Item> {
     right: Option<Link<Item>>,
 }
 
-impl<Item> Link<Item> {
+pub fn modify<T, F>(t_box_ref_mut: &mut Box<T>, f: F)
+    where F: Fn(T) -> T {
+    let null_box = unsafe { Box::<T>::from_raw(std::ptr::null_mut()) };
+    // temporarily put that box in place of self.to, in order to own self.to
+    let t_box = mem::replace(t_box_ref_mut, null_box);
+    let t = f(*t_box);
+    let null_box = mem:: replace(t_box_ref_mut, Box::new(t));
+    // consume the box that  holds the null pointer, so that it does not try to de-allocate
+    // it later when it would be dropped
+    mem::forget(null_box);
+}
+
+impl<Item> Link<Item>
+    where Item: PartialOrd
+    {
     pub fn new_red(node: Node<Item>) -> Link<Item> {
         Link { to: Box::new(node), color: Red }
     }
@@ -40,83 +54,7 @@ impl<Item> Link<Item> {
     }
 
     pub fn rotate_left(&mut self) {
-        // get the rigth link out as an Option, if there is one. Self needs to be borrowed
-        // mutably for that, so we have to close the block and continue working with the resulting
-        // option
-        let right_link_opt = {
-            let Link { to, .. } = self;
-            let to_node = to.as_mut();
-            if let Node {
-                right: right @ Some(Link { to: _, color: Red }),
-                ..
-            } = to_node {
-                // replace right by a None, and get it out
-                mem::replace(right, None)
-            } else {
-                None
-            }
-        };
-        // here we have self back, and can work with the option.
-        if let Some(Link { to: right_node, .. }) = right_link_opt {
-            // link the right node into self, and get out self.to
-            let mut left_node = mem::replace(&mut self.to, right_node);
-            // now right_node is consumed, so I need to get it again.
-            let right_node = &mut self.to;
-            let right_node = right_node.as_mut();
-            let middle = mem::replace(&mut right_node.left, Some(Link { to: left_node, color: Red }));
-            // now the left_node is consumed, so I need to get it again.
-            let left_link = &mut right_node.left;
-            if let Some(Link { to: left_node, .. }) = left_link {
-                // this will always be the case, because that is how we constructed it 3 lines above
-                // plug middle into left_node
-                left_node.right = middle;
-            }
-        }
-    }
-
-    pub fn rotate_left_a_little_unsafe(&mut self) {
-        // create a box that contains null
-        let null_node_box = unsafe { Box::<Node<Item>>::from_raw(std::ptr::null_mut()) };
-        // temporarily put that box in place of self.to, in order to own self.to
-        let to = mem::replace(&mut self.to, null_node_box);
-        let to = *to;
-        // I run into https://github.com/rust-lang/rust/issues/16223
-        // so I unglily have to split up the
-        // pattern matching in two:
-
-        // first part of the pattern
-        if let Node {
-            value: top_value,
-            left,
-            right: Some(Link {
-                            to: right_node,
-                            color: Red
-                        })
-        } = to {
-            // deref the box
-            let right_node = *right_node;
-            // second part of the pattern
-            let Node {
-                value: right_value,
-                left: middle,
-                right
-            } = right_node;
-            let null_node_box = mem::replace(&mut self.to, Box::new(Node {
-                value: right_value,
-                left: Some(Link {
-                    to: Box::new(Node {
-                        value: top_value,
-                        left: left,
-                        right: middle,
-                    }),
-                    color: Red,
-                }),
-                right: right,
-            }));
-            // consume the box that  holds the null pointer, so that it does not try to de-allocate
-            // it later when it would be dropped
-            Box::into_raw(null_node_box);
-        }
+        modify(&mut self.to, |n| n.rotate_left());
     }
 }
 
@@ -158,6 +96,45 @@ impl<Item> Node<Item>
     pub fn right_value(&self) -> Option<Item>
         where Item: Copy {
         self.right.as_ref().map(|l| l.to.value)
+    }
+
+    pub fn rotate_left(self) -> Node<Item> {
+        // I run into https://github.com/rust-lang/rust/issues/16223
+        // so I unglily have to split up the
+        // pattern matching in two:
+
+        // first part of the pattern
+        if let Node {
+            value: top_value,
+            left,
+            right: Some(Link {
+                            to: right_node,
+                            color: Red
+                        })
+        } = self {
+            // deref the box
+            let right_node = *right_node;
+            // second part of the pattern
+            let Node {
+                value: right_value,
+                left: middle,
+                right
+            } = right_node;
+            Node {
+                value: right_value,
+                left: Some(Link {
+                    to: Box::new(Node {
+                        value: top_value,
+                        left,
+                        right: middle,
+                    }),
+                    color: Red,
+                }),
+                right,
+            }
+        } else {
+            self
+        }
     }
 }
 
@@ -222,22 +199,6 @@ mod tests {
         let mut link = Link::new_black(node);
 
         link.rotate_left();
-
-        assert_eq!(link.value(), 40);
-        let node = link.to.as_ref();
-        let left_val = node.left.as_ref().unwrap().value();
-        assert_eq!(left_val, 32);
-        assert!(link.to.as_ref().right.is_none());
-    }
-
-    #[test]
-    fn rotate_left_a_little_unsafe() {
-        let mut node = Node::new(32);
-        node.insert_val(40);
-
-        let mut link = Link::new_black(node);
-
-        link.rotate_left_a_little_unsafe();
 
         assert_eq!(link.value(), 40);
         let node = link.to.as_ref();
