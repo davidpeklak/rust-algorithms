@@ -18,7 +18,7 @@ impl PerformanceObservable for VecWrap {
         VecWrap { vec }
     }
 
-    fn run(&mut self, _size: usize, rng: &mut ThreadRng) {
+    fn run(&mut self, _size: usize, _rng: &mut ThreadRng) {
         make_heap(&mut self.vec);
         heap_sort(&mut self.vec);
     }

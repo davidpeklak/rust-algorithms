@@ -1,5 +1,5 @@
 //! Implements a black-red-binary-search-tree as described in the course.
-//!
+
 use std::mem;
 
 #[derive(PartialEq)]
@@ -10,36 +10,36 @@ enum Color {
 
 use self::Color::{Red, Black};
 
-struct Link<Item> {
+pub struct Link<Item> {
     to: Box<Node<Item>>,
     color: Color,
 }
 
-struct Node<Item> {
+pub struct Node<Item> {
     value: Item,
     left: Option<Link<Item>>,
     right: Option<Link<Item>>,
 }
 
 impl<Item> Link<Item> {
-    fn new_red(node: Node<Item>) -> Link<Item> {
+    pub fn new_red(node: Node<Item>) -> Link<Item> {
         Link { to: Box::new(node), color: Red }
     }
 
-    fn new_black(node: Node<Item>) -> Link<Item> {
+    pub fn new_black(node: Node<Item>) -> Link<Item> {
         Link { to: Box::new(node), color: Black }
     }
 
-    fn value_ref(&self) -> &Item {
+    pub fn value_ref(&self) -> &Item {
         &self.to.as_ref().value
     }
 
-    fn value(&self) -> Item
+    pub fn value(&self) -> Item
     where Item: Copy {
         self.to.as_ref().value
     }
 
-    fn rotate_left(&mut self) {
+    pub fn rotate_left(&mut self) {
         // get the rigth link out as an Option, if there is one. Self needs to be borrowed
         // mutably for that, so we have to close the block and continue working with the resulting
         // option
@@ -73,21 +73,66 @@ impl<Item> Link<Item> {
             }
         }
     }
+
+    pub fn rotate_left_a_little_unsafe(&mut self) {
+        // create a box that contains null
+        let null_node_box = unsafe { Box::<Node<Item>>::from_raw(std::ptr::null_mut()) };
+        // temporarily put that box in place of self.to, in order to own self.to
+        let to = mem::replace(&mut self.to, null_node_box);
+        let to = *to;
+        // I run into https://github.com/rust-lang/rust/issues/16223
+        // so I unglily have to split up the
+        // pattern matching in two:
+
+        // first part of the pattern
+        if let Node {
+            value: top_value,
+            left,
+            right: Some(Link {
+                            to: right_node,
+                            color: Red
+                        })
+        } = to {
+            // deref the box
+            let right_node = *right_node;
+            // second part of the pattern
+            let Node {
+                value: right_value,
+                left: middle,
+                right
+            } = right_node;
+            let null_node_box = mem::replace(&mut self.to, Box::new(Node {
+                value: right_value,
+                left: Some(Link {
+                    to: Box::new(Node {
+                        value: top_value,
+                        left: left,
+                        right: middle,
+                    }),
+                    color: Red,
+                }),
+                right: right,
+            }));
+            // consume the box that  holds the null pointer, so that it does not try to de-allocate
+            // it later when it would be dropped
+            Box::into_raw(null_node_box);
+        }
+    }
 }
 
 impl<Item> Node<Item>
     where Item: PartialOrd {
-    fn new(value: Item) -> Node<Item>
+    pub fn new(value: Item) -> Node<Item>
     {
         Node { value, left: None, right: None }
     }
 
-    fn insert_val(&mut self, value: Item) {
+    pub fn insert_val(&mut self, value: Item) {
         let node = Node::new(value);
         self.insert_node(node);
     }
 
-    fn insert_node(&mut self, node: Node<Item>) {
+    pub fn insert_node(&mut self, node: Node<Item>) {
         match self {
             Node { value: v, left: None, right: None } if *v >= node.value =>
                 self.left = Some(Link::new_red(node)),
@@ -97,20 +142,20 @@ impl<Item> Node<Item>
         }
     }
 
-    fn left_value_ref(&self) -> Option<&Item> {
+    pub fn left_value_ref(&self) -> Option<&Item> {
         self.left.as_ref().map(|l| &l.to.value)
     }
 
-    fn left_value(&self) -> Option<Item>
+    pub fn left_value(&self) -> Option<Item>
         where Item: Copy {
         self.left.as_ref().map(|l| l.to.value)
     }
 
-    fn right_value_ref(&self) -> Option<&Item> {
+    pub fn right_value_ref(&self) -> Option<&Item> {
         self.right.as_ref().map(|l| &l.to.value)
     }
 
-    fn right_value(&self) -> Option<Item>
+    pub fn right_value(&self) -> Option<Item>
         where Item: Copy {
         self.right.as_ref().map(|l| l.to.value)
     }
@@ -177,6 +222,22 @@ mod tests {
         let mut link = Link::new_black(node);
 
         link.rotate_left();
+
+        assert_eq!(link.value(), 40);
+        let node = link.to.as_ref();
+        let left_val = node.left.as_ref().unwrap().value();
+        assert_eq!(left_val, 32);
+        assert!(link.to.as_ref().right.is_none());
+    }
+
+    #[test]
+    fn rotate_left_a_little_unsafe() {
+        let mut node = Node::new(32);
+        node.insert_val(40);
+
+        let mut link = Link::new_black(node);
+
+        link.rotate_left_a_little_unsafe();
 
         assert_eq!(link.value(), 40);
         let node = link.to.as_ref();
