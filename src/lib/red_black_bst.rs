@@ -86,6 +86,20 @@ impl<Item> Link<Item>
     fn rotate_left(&mut self) {
         Link::modify(self, |l| l.rotate_left_consume());
     }
+
+    fn rotate_right_consume(self) -> Link<Item> {
+        match self {
+            End => self,
+            ColoredLink { color, node_box } => {
+                let rotated_node = node_box.rotate_right();
+                ColoredLink { color, node_box: Box::new(rotated_node) }
+            }
+        }
+    }
+
+    fn rotate_right(&mut self) {
+        Link::modify(self, |l| l.rotate_right_consume());
+    }
 }
 
 impl<Item> Node<Item>
@@ -158,6 +172,37 @@ impl<Item> Node<Item>
                     })
                 },
                 right,
+            }
+        } else {
+            self
+        }
+    }
+
+    fn rotate_right(self) -> Node<Item> {
+        if let Node {
+            value: top_value,
+            left: ColoredLink{ color: Red, node_box: left_node },
+            right
+        } = self {
+            // deref the box
+            let left_node = *left_node;
+            // second part of the pattern
+            let Node {
+                value: left_value,
+                left,
+                right: middle
+            } = left_node;
+            Node {
+                value: left_value,
+                left,
+                right: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node {
+                        value: top_value,
+                        left: middle,
+                        right
+                    })
+                }
             }
         } else {
             self
@@ -240,7 +285,35 @@ mod tests {
                         right: End,
                     }),
                 },
-                right: End,
+                right: End
+            }),
+        };
+
+        assert_eq!(link, expected);
+    }
+
+    #[test]
+    fn rotate_right() {
+        let mut node = Node::new(32);
+        node.insert_val(20);
+
+        let mut link = ColoredLink{color: Black, node_box: Box::new(node)};
+
+        link.rotate_right();
+
+        let expected = ColoredLink {
+            color: Black,
+            node_box: Box::new(Node {
+                value: 20,
+                left: End,
+                right: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node {
+                        value: 32,
+                        left: End,
+                        right: End,
+                    }),
+                }
             }),
         };
 
