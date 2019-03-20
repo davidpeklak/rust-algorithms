@@ -73,32 +73,23 @@ impl<Item> Link<Item>
         mem::replace(self, new_self);
     }
 
-    fn rotate_left_consume(self) -> Link<Item> {
+    fn consume_node_consume<F>(self, f: F) -> Link<Item>
+    where F: Fn(Node<Item>) -> Node<Item> {
         match self {
             End => self,
             ColoredLink { color, node_box } => {
-                let rotated_node = node_box.rotate_left();
-                ColoredLink { color, node_box: Box::new(rotated_node) }
+                let new_node = f(*node_box);
+                ColoredLink { color, node_box: Box::new(new_node) }
             }
         }
     }
 
     fn rotate_left(&mut self) {
-        Link::modify(self, |l| l.rotate_left_consume());
-    }
-
-    fn rotate_right_consume(self) -> Link<Item> {
-        match self {
-            End => self,
-            ColoredLink { color, node_box } => {
-                let rotated_node = node_box.rotate_right();
-                ColoredLink { color, node_box: Box::new(rotated_node) }
-            }
-        }
+        Link::modify(self, |l| l.consume_node_consume(|n| n.rotate_left()));
     }
 
     fn rotate_right(&mut self) {
-        Link::modify(self, |l| l.rotate_right_consume());
+        Link::modify(self, |l| l.consume_node_consume(|n| n.rotate_right()));
     }
 }
 
