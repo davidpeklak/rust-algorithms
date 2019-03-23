@@ -2,7 +2,7 @@
 
 use std::mem;
 
-use self::Color::Red;
+use self::Color::{Red, Black};
 use self::Link::{ColoredLink, End};
 
 pub struct RedBlackTree<Item> {
@@ -90,6 +90,20 @@ impl<Item> Link<Item>
 
     fn rotate_right(&mut self) {
         Link::modify(self, |l| l.consume_node_consume(|n| n.rotate_right()));
+    }
+
+    fn color_flip(&mut self) {
+        if let ColoredLink { color: top_color@Black, node_box } = self {
+            if let Node {
+                left: ColoredLink { color: left_color@Red, .. },
+                right: ColoredLink { color: right_color@Red, .. },
+                ..
+            } = node_box.as_mut() {
+                mem::replace(top_color, Red);
+                mem::replace(left_color, Black);
+                mem::replace(right_color, Black);
+            }
+        }
     }
 }
 
@@ -306,6 +320,43 @@ mod tests {
                     }),
                 }
             }),
+        };
+
+        assert_eq!(link, expected);
+    }
+
+    #[test]
+    fn color_flip() {
+        let mut link = ColoredLink {
+            color: Black,
+            node_box: Box::new({ Node {
+                value: 32,
+                left: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node::new(20))
+                },
+                right: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node::new(40))
+                }
+            }})
+        };
+
+        link.color_flip();
+
+        let expected = ColoredLink {
+            color: Red,
+            node_box: Box::new({ Node {
+                value: 32,
+                left: ColoredLink {
+                    color: Black,
+                    node_box: Box::new(Node::new(20))
+                },
+                right: ColoredLink {
+                    color: Black,
+                    node_box: Box::new(Node::new(40))
+                }
+            }})
         };
 
         assert_eq!(link, expected);
