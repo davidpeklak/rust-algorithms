@@ -1,6 +1,6 @@
 //! Implements a red-black-binary-search-tree as described in the course.
 
-use std::mem;
+use std::{cmp, mem};
 use std::ops::Range;
 
 use self::Color::{Red, Black};
@@ -107,11 +107,27 @@ impl<Item> Link<Item>
         }
     }
 
+    /// tests if the link is the top of a binary search tree, i.e. if the left of each node is
+    /// lower than the node itself, and if the rigth of each node is greater than the node itself
     #[cfg(test)]
     fn is_bst(&self) -> bool {
         match &self {
             End => true,
             ColoredLink {node_box, ..} => node_box.as_ref().is_bst()
+        }
+    }
+
+    /// returns the number of black links found under the node, as a range The start of the range is the
+    /// lowest depth found, the end of the range minus one is the highest depth found.
+    #[cfg(test)]
+    fn black_depth(&self) -> Range<usize> {
+        match &self {
+            End => 0..1,
+            ColoredLink { color: Black, node_box} => {
+                let node_depth = node_box.as_ref().black_depth();
+                (node_depth.start + 1) .. (node_depth.end + 1)
+            },
+            ColoredLink { color: Red, node_box} => node_box.as_ref().black_depth()
         }
     }
 }
@@ -223,6 +239,8 @@ impl<Item> Node<Item>
         }
     }
 
+    /// tests if the link is the top of a binary search tree, i.e. if the left of each node is
+    /// lower than the node itself, and if the rigth of each node is greater than the node itself
     #[cfg(test)]
     fn is_bst(&self) -> bool {
         let result = match &self.left {
@@ -239,6 +257,15 @@ impl<Item> Node<Item>
             }
         };
         result
+    }
+
+    /// returns the number of black links found under the node, as a range The start of the range is the
+    /// lowest depth found, the end of the range minus one is the highest depth found.
+    #[cfg(test)]
+    fn black_depth(&self) -> Range<usize> {
+        let left_depth = self.left.black_depth();
+        let right_depth = self.right.black_depth();
+        cmp::min(left_depth.start, right_depth.start) .. cmp::max(left_depth.end, right_depth.end)
     }
 }
 
