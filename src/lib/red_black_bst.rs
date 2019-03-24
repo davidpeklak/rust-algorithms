@@ -1,6 +1,7 @@
 //! Implements a red-black-binary-search-tree as described in the course.
 
 use std::mem;
+use std::ops::Range;
 
 use self::Color::{Red, Black};
 use self::Link::{ColoredLink, End};
@@ -18,9 +19,9 @@ enum Color {
 #[derive(Eq, PartialEq, Debug)]
 enum Link<Item> {
     End,
-    ColoredLink{
+    ColoredLink {
         color: Color,
-        node_box: Box<Node<Item>>
+        node_box: Box<Node<Item>>,
     }
 }
 
@@ -103,6 +104,14 @@ impl<Item> Link<Item>
                 mem::replace(left_color, Black);
                 mem::replace(right_color, Black);
             }
+        }
+    }
+
+    #[cfg(test)]
+    fn is_bst(&self) -> bool {
+        match &self {
+            End => true,
+            ColoredLink {node_box, ..} => node_box.as_ref().is_bst()
         }
     }
 }
@@ -212,6 +221,24 @@ impl<Item> Node<Item>
         } else {
             self
         }
+    }
+
+    #[cfg(test)]
+    fn is_bst(&self) -> bool {
+        let result = match &self.left {
+            End => true,
+            ColoredLink { node_box, .. } => {
+                let node = node_box.as_ref();
+                node.value < self.value && node.is_bst()
+            }
+        } && match &self.right {
+            End => true,
+            ColoredLink { node_box, .. } => {
+                let node = node_box.as_ref();
+                node.value > self.value && node.is_bst()
+            }
+        };
+        result
     }
 }
 
