@@ -416,4 +416,73 @@ mod tests {
         assert_eq!(link, expected);
     }
 
+    #[test]
+    fn black_depth() {
+        let link = ColoredLink {
+            color: Black,
+            node_box: Box::new({ Node {
+                value: 32,
+                left: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node::new(20))
+                },
+                right: ColoredLink {
+                    color: Black,
+                    node_box: Box::new(Node::new(40))
+                }
+            }})
+        };
+
+        let result = link.black_depth();
+        assert_eq!(result, 1..3);
+
+        let link = ColoredLink {
+            color: Black,
+            node_box: Box::new({ Node {
+                value: 32,
+                left: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node::new(20))
+                },
+                right: End
+            }})
+        };
+
+        let result = link.black_depth();
+        assert_eq!(result, 1..2);
+    }
+
+    #[test]
+    fn is_bst() {
+        let node = Node {
+            value: 32,
+            left: ColoredLink {
+                color: Red,
+                node_box: Box::new(Node::new(20))
+            },
+            right: ColoredLink {
+                color: Black,
+                node_box: Box::new(Node::new(40))
+            }
+        };
+
+        let result = node.is_bst();
+        assert_eq!(result, true);
+
+        let node = Node {
+            value: 32,
+            left: ColoredLink {
+                color: Red,
+                node_box: Box::new(Node::new(40))
+            },
+            right: ColoredLink {
+                color: Black,
+                node_box: Box::new(Node::new(20))
+            }
+        };
+
+        let result = node.is_bst();
+        assert_eq!(result, false);
+    }
+
 }
