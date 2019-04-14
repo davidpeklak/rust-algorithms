@@ -1,6 +1,8 @@
 //! algorithms as presented in the Algorithms course
 //! by Robert Sedgewick and Kevin Wayne on coursera.org
 
+extern crate rand;
+
 pub mod quick_find;
 
 pub mod quick_union;

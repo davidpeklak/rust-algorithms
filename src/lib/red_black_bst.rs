@@ -6,10 +6,6 @@ use std::ops::Range;
 use self::Color::{Red, Black};
 use self::Link::{ColoredLink, End};
 
-pub struct RedBlackTree<Item> {
-    top: Link<Item>
-}
-
 #[derive(Eq, PartialEq, Debug)]
 enum Color {
     Red,
@@ -32,15 +28,9 @@ pub struct Node<Item> {
     right: Link<Item>,
 }
 
-impl<Item> RedBlackTree<Item>
-    where Item: PartialOrd {
-    pub fn insert(&mut self, value: Item) {
-        self.top.insert_val(value);
-    }
-}
-
 impl<Item> Link<Item>
     where Item: PartialOrd {
+
     #[allow(dead_code)] // for testing
     fn value_ref(&self) -> Option<&Item> {
         match self {
@@ -59,11 +49,27 @@ impl<Item> Link<Item>
     }
 
     fn insert_val(&mut self, value: Item) {
+        let node = Node::new(value);
+        self.insert_node(node);
+    }
+
+    fn insert_node(&mut self, node: Node<Item>) {
         match self {
             End => {
-                mem::replace(self, ColoredLink{ color: Red, node_box: Box::new(Node::new(value))});
+                mem::replace(self, ColoredLink { color: Red, node_box: Box::new(node) });
             },
-            ColoredLink{node_box, .. }  => node_box.insert_val(value)
+            ColoredLink { node_box, .. } => node_box.insert_node(node)
+        }
+
+        self.rotate_left();
+        self.rotate_right();
+        self.color_flip();
+    }
+
+    fn make_black(&mut self) {
+        match self {
+            End => (),
+            ColoredLink { ref mut color, .. } => *color = Black
         }
     }
 
@@ -130,6 +136,50 @@ impl<Item> Link<Item>
             ColoredLink { color: Red, node_box} => node_box.as_ref().black_depth()
         }
     }
+
+    #[cfg(test)]
+    fn total_depth(&self) -> Range<usize> {
+        match &self {
+            End => 0..1,
+            ColoredLink { node_box,.. } => {
+                let node_depth = node_box.as_ref().total_depth();
+                (node_depth.start + 1) .. (node_depth.end + 1)
+            }
+        }
+    }
+
+    #[cfg(test)]
+    fn is_black_balanced(&self) -> bool {
+        let black_depth = self.black_depth();
+        black_depth.end - black_depth.start <= 1
+    }
+
+    #[cfg(test)]
+    fn has_right_leaning_red_links(&self) -> bool {
+        match &self {
+            End => false,
+            ColoredLink { node_box, .. } => node_box.has_right_leaning_red_links()
+        }
+    }
+
+    #[cfg(test)]
+    fn has_consecutive_red_links(&self) -> bool {
+        match &self {
+            End => false,
+            ColoredLink { node_box, color: Red } => {
+                let node = node_box.as_ref();
+                match node {
+                    Node { right: ColoredLink { color: Red, ..}, .. } => true,
+                    Node { left: ColoredLink { color: Red, .. }, .. } => true,
+                    Node { left, right, ..} =>
+                        left.has_consecutive_red_links() || right.has_consecutive_red_links()
+                }
+            },
+            ColoredLink {node_box, .. }=> {
+                node_box.left.has_consecutive_red_links() || node_box.right.has_consecutive_red_links()
+            }
+        }
+    }
 }
 
 impl<Item> Node<Item>
@@ -146,11 +196,17 @@ impl<Item> Node<Item>
 
     fn insert_node(&mut self, node: Node<Item>) {
         match self {
-            Node { value: v, left: End, right: End } if *v >= node.value =>
-                self.left = ColoredLink{ color: Red, node_box: Box::new(node)},
-            Node { value: _, left: End, right: End } /* if *v < boxed_node.value */ =>
-                self.right = ColoredLink{ color: Red, node_box: Box::new(node)},
-            _ => unimplemented!()
+            Node { value: v, ..} if *v == node.value =>
+                (),
+            Node { value: v, left: End, .. } if *v > node.value =>
+                self.left = ColoredLink { color: Red, node_box: Box::new(node) },
+            Node { value: v, right: End, .. } if *v < node.value =>
+                self.right = ColoredLink { color: Red, node_box: Box::new(node) },
+            Node { value: v, left: left@ColoredLink { .. }, .. } if *v > node.value =>
+                left.insert_node(node),
+            Node { value: v, right: right@ColoredLink { .. }, .. } if *v < node.value =>
+                right.insert_node(node),
+            _ => unreachable!()
         }
     }
 
@@ -217,21 +273,33 @@ impl<Item> Node<Item>
             // deref the box
             let left_node = *left_node;
             // second part of the pattern
-            let Node {
+            if let Node {
                 value: left_value,
-                left,
-                right: middle
-            } = left_node;
-            Node {
-                value: left_value,
-                left,
-                right: ColoredLink {
+                left: left@ColoredLink {
                     color: Red,
-                    node_box: Box::new(Node {
-                        value: top_value,
-                        left: middle,
-                        right
-                    })
+                    ..
+                },
+                right: middle
+            } = left_node {
+                Node {
+                    value: left_value,
+                    left,
+                    right: ColoredLink {
+                        color: Red,
+                        node_box: Box::new(Node {
+                            value: top_value,
+                            left: middle,
+                            right
+                        })
+                    }
+                }
+            } else {
+                // the second pattern does not match, so we need to re-construct the first one,
+                // because we already de-constructed it, sigh.
+                Node {
+                    value: top_value,
+                    left: ColoredLink{ color: Red, node_box: Box::new(left_node) },
+                    right
                 }
             }
         } else {
@@ -267,13 +335,32 @@ impl<Item> Node<Item>
         let right_depth = self.right.black_depth();
         cmp::min(left_depth.start, right_depth.start) .. cmp::max(left_depth.end, right_depth.end)
     }
+
+    /// returns the number of links found under the node, as a range The start of the range is the
+    /// lowest depth found, the end of the range minus one is the highest depth found.
+    #[cfg(test)]
+    fn total_depth(&self) -> Range<usize> {
+        let left_depth = self.left.total_depth();
+        let right_depth = self.right.total_depth();
+        cmp::min(left_depth.start, right_depth.start) .. cmp::max(left_depth.end, right_depth.end)
+    }
+
+    #[cfg(test)]
+    fn has_right_leaning_red_links(&self) -> bool {
+        match &self {
+            Node { right: ColoredLink { color: Red, ..}, ..} => true,
+            Node { right, left, ..} => right.has_right_leaning_red_links() && left.has_right_leaning_red_links()
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Color::{Red, Black};
+    use super::Link;
     use super::Link::{ColoredLink, End};
     use super::Node;
+    use rand::{thread_rng, Rng};
 
     #[test]
     fn test_new() {
@@ -300,40 +387,39 @@ mod tests {
     }
 
     #[test]
-    fn insert_lower_node_into_empty_node() {
-        let mut node = Node::new(32);
-        node.insert_node(Node::new(20));
-
-        assert_eq!(node.left_value(), Some(20));
-    }
-
-    #[test]
-    fn insert_lower_value_into_empty_node() {
-        let mut node = Node::new(32);
-        node.insert_val(20);
-
-        assert_eq!(node.left_value(), Some(20));
-    }
-
-    #[test]
-    fn insert_higher_value_into_empty_node() {
-        let mut node = Node::new(32);
-        node.insert_val(40);
-
-        assert_eq!(node.right_value(), Some(40));
-    }
-
-    #[test]
-    fn rotate_left() {
-        let mut node = Node::new(32);
-        node.insert_val(40);
-
-        let mut link = ColoredLink{color: Black, node_box: Box::new(node)};
-
-        link.rotate_left();
+    fn insert_lower_value() {
+        let mut link: Link<i32> = Link::End;
+        link.insert_val(32);
+        link.insert_val(20);
 
         let expected = ColoredLink {
-            color: Black,
+            color: Red,
+            node_box: Box::new(Node {
+                value: 32,
+                left: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node {
+                        value: 20,
+                        left: End,
+                        right: End,
+                    }),
+                },
+                right: End,
+            }),
+        };
+
+        assert_eq!(expected, link);
+        assert!(link.is_bst());
+    }
+
+    #[test]
+    fn insert_higher_value() {
+        let mut link: Link<i32> = Link::End;
+        link.insert_val(32);
+        link.insert_val(40);
+
+        let expected = ColoredLink {
+            color: Red,
             node_box: Box::new(Node {
                 value: 40,
                 left: ColoredLink {
@@ -344,40 +430,118 @@ mod tests {
                         right: End,
                     }),
                 },
-                right: End
+                right: End,
             }),
         };
 
-        assert_eq!(link, expected);
+        assert_eq!(expected, link);
+        assert!(link.is_bst());
     }
 
     #[test]
-    fn rotate_right() {
-        let mut node = Node::new(32);
-        node.insert_val(20);
-
-        let mut link = ColoredLink{color: Black, node_box: Box::new(node)};
-
-        link.rotate_right();
-
-        let expected = ColoredLink {
+    fn test_rotate_left() {
+        let mut link = ColoredLink {
             color: Black,
             node_box: Box::new(Node {
-                value: 20,
-                left: End,
-                right: ColoredLink {
-                    color: Red,
+                value: 32,
+                left: ColoredLink {
+                    color: Black,
                     node_box: Box::new(Node {
-                        value: 32,
+                        value: 20,
                         left: End,
                         right: End,
                     }),
-                }
+                },
+                right: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node {
+                        value: 40,
+                        left: End,
+                        right: End,
+                    }),
+                },
             }),
         };
 
-        assert_eq!(link, expected);
+        link.rotate_left();
+
+        let expectation = ColoredLink {
+            color: Black,
+            node_box: Box::new(Node {
+                value: 40,
+                left: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node {
+                        value: 32,
+                        left: ColoredLink {
+                            color: Black,
+                            node_box: Box::new(Node {
+                                value: 20,
+                                left: End,
+                                right: End,
+                            })
+                        },
+                        right: End,
+                    }),
+                },
+                right: End,
+                }),
+            };
+        assert_eq!(expectation, link);
     }
+
+    #[test]
+    fn test_rotate_right() {
+        let mut link = ColoredLink {
+            color: Black,
+            node_box: Box::new(Node {
+                value: 40,
+                left: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node {
+                        value: 32,
+                        left: ColoredLink {
+                            color: Red,
+                            node_box: Box::new(Node {
+                                value: 20,
+                                left: End,
+                                right: End,
+                            })
+                        },
+                        right: End,
+                    }),
+                },
+                right: End,
+            }),
+        };
+
+        link.rotate_right();
+
+        let expectation = ColoredLink {
+            color: Black,
+            node_box: Box::new(Node {
+                value: 32,
+                left: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node {
+                        value: 20,
+                        left: End,
+                        right: End,
+                    }),
+                },
+                right: ColoredLink {
+                    color: Red,
+                    node_box: Box::new(Node {
+                        value: 40,
+                        left: End,
+                        right: End,
+                    }),
+                },
+            }),
+        };
+        assert_eq!(expectation, link);
+    }
+
 
     #[test]
     fn color_flip() {
@@ -417,7 +581,7 @@ mod tests {
     }
 
     #[test]
-    fn black_depth() {
+    fn depth() {
         let link = ColoredLink {
             color: Black,
             node_box: Box::new({ Node {
@@ -435,6 +599,8 @@ mod tests {
 
         let result = link.black_depth();
         assert_eq!(result, 1..3);
+        let result = link.total_depth();
+        assert_eq!(result, 2..3);
 
         let link = ColoredLink {
             color: Black,
@@ -450,10 +616,12 @@ mod tests {
 
         let result = link.black_depth();
         assert_eq!(result, 1..2);
+        let result = link.total_depth();
+        assert_eq!(result, 1..3);
     }
 
     #[test]
-    fn is_bst() {
+    fn test_is_bst() {
         let node = Node {
             value: 32,
             left: ColoredLink {
@@ -485,4 +653,25 @@ mod tests {
         assert_eq!(result, false);
     }
 
+    /// confirms that inserting 5 values into a link results in a binary search tree. Does not
+    /// test whether the tree is black balanced, nor if it is a valid red black tree.
+    #[test]
+    fn multiple_insertion_results_in_bst() {
+        let mut tree: Link<i32> =  End;
+        let mut rng = thread_rng();
+
+        let number_of_nodes = 20;
+
+        for _ in 0..number_of_nodes {
+            let new_value: i32 = rng.gen_range(0, 100);
+            tree.insert_val(new_value);
+            tree.make_black()
+        }
+        assert!(tree.is_bst(), "{:?}", tree);
+        assert!(tree.is_black_balanced(), "{:?}", tree);
+        assert!(!tree.has_right_leaning_red_links(), "{:?}", tree);
+        assert!(tree.has_consecutive_red_links(), "{:?}", tree);
+    }
+
 }
+
