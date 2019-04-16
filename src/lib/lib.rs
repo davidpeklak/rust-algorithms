@@ -37,5 +37,7 @@ pub mod max_pq;
 
 pub mod red_black_bst;
 
+pub mod red_black_bst_2;
+
 #[cfg(test)]
 pub mod is_sorted;

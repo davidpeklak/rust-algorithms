@@ -119,7 +119,24 @@ impl<Item> Link<Item>
     fn is_bst(&self) -> bool {
         match &self {
             End => true,
-            ColoredLink {node_box, ..} => node_box.as_ref().is_bst()
+            ColoredLink {node_box, ..} => {
+                let node = node_box.as_ref();
+                (
+                    match &node.left {
+                        End => true,
+                        ColoredLink { node_box: left_node_box, .. } => {
+                            left_node_box.as_ref().value < node.value && left_node_box.is_bst()
+                        }
+                    }
+                ) && (
+                    match &node.right {
+                        End => true,
+                        ColoredLink { node_box: right_node_box, .. } => {
+                            right_node_box.as_ref().value < node.value && right_node_box.is_bst()
+                        }
+                    }
+                )
+            }
         }
     }
 
@@ -670,7 +687,7 @@ mod tests {
         assert!(tree.is_bst(), "{:?}", tree);
         assert!(tree.is_black_balanced(), "{:?}", tree);
         assert!(!tree.has_right_leaning_red_links(), "{:?}", tree);
-        assert!(tree.has_consecutive_red_links(), "{:?}", tree);
+        assert!(!tree.has_consecutive_red_links(), "{:?}", tree);
     }
 
 }
