@@ -80,16 +80,41 @@ impl<Item> Link<Item>
             }
         }
     }
+
+    /// checks if this link has a black balanced tree under it, i.e. the range returned by black_depth()
+    /// is not wider than 1
+    #[cfg(test)]
+    fn is_black_balanced(&self) -> bool {
+        let black_depth = self.black_depth();
+        black_depth.end - black_depth.start <= 1
+    }
+
+    /// checks if this link has any right leaning red links under it
+    #[cfg(test)]
+    fn has_right_leaning_red_links(&self) -> bool {
+        match &self {
+            End => false,
+            ColoredLink { left, right, .. } => {
+                (
+                    match right.as_ref() {
+                        ColoredLink { color: Red, .. } => true,
+                        _ => false
+                    }
+                ) || left.has_right_leaning_red_links() || right.has_right_leaning_red_links()
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::Link;
     use super::Link::{ColoredLink, End};
     use super::Color::{Black, Red};
 
-    #[test]
-    fn test_is_bst() {
-        let link = ColoredLink {
+    /// returns an exemplary tree that is used in various tests
+    fn link_1() -> Link<i32> {
+        ColoredLink {
             color: Black,
             value: 32,
             left: Box::new(ColoredLink {
@@ -109,7 +134,42 @@ mod tests {
                 left: Box::new(End),
                 right: Box::new(End)
             })
-        };
+        }
+    }
+
+    /// returns an exemplary tree that is used in various tests
+    fn link_2() -> Link<i32> {
+        ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(ColoredLink {
+                    color: Black,
+                    value: 18,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                }),
+                right: Box::new(ColoredLink {
+                    color: Black,
+                    value: 25,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                })
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        }
+    }
+
+    #[test]
+    fn test_is_bst() {
+        let link = link_1();
 
         assert!(link.is_bst(), "{:?}", link);
 
@@ -135,57 +195,12 @@ mod tests {
 
     #[test]
     fn test_black_depth() {
-        let link = ColoredLink {
-            color: Black,
-            value: 32,
-            left: Box::new(ColoredLink {
-                color: Red,
-                value: 20,
-                left: Box::new(End),
-                right: Box::new(ColoredLink {
-                    color: Black,
-                    value: 25,
-                    left: Box::new(End),
-                    right: Box::new(End)
-                })
-            }),
-            right: Box::new(ColoredLink {
-                color: Black,
-                value: 40,
-                left: Box::new(End),
-                right: Box::new(End)
-            })
-        };
+        let link = link_1();
 
         let black_depth = link.black_depth();
         assert_eq!(black_depth, 1..3);
 
-        let link = ColoredLink {
-            color: Black,
-            value: 32,
-            left: Box::new(ColoredLink {
-                color: Red,
-                value: 20,
-                left: Box::new(ColoredLink {
-                    color: Black,
-                    value: 18,
-                    left: Box::new(End),
-                    right: Box::new(End)
-                }),
-                right: Box::new(ColoredLink {
-                    color: Black,
-                    value: 25,
-                    left: Box::new(End),
-                    right: Box::new(End)
-                })
-            }),
-            right: Box::new(ColoredLink {
-                color: Black,
-                value: 40,
-                left: Box::new(End),
-                right: Box::new(End)
-            })
-        };
+        let link = link_2();
 
         let black_depth = link.black_depth();
         assert_eq!(black_depth, 2..3);
@@ -193,30 +208,21 @@ mod tests {
 
     #[test]
     fn test_total_depth() {
-        let link = ColoredLink {
-            color: Black,
-            value: 32,
-            left: Box::new(ColoredLink {
-                color: Red,
-                value: 20,
-                left: Box::new(End),
-                right: Box::new(ColoredLink {
-                    color: Black,
-                    value: 25,
-                    left: Box::new(End),
-                    right: Box::new(End)
-                })
-            }),
-            right: Box::new(ColoredLink {
-                color: Black,
-                value: 40,
-                left: Box::new(End),
-                right: Box::new(End)
-            })
-        };
+        let link = link_1();
 
         let total_depth = link.total_depth();
         assert_eq!(total_depth, 2..4);
+
+        let link = link_2();
+
+        let total_depth = link.total_depth();
+        assert_eq!(total_depth, 3..4);
+    }
+
+    #[test]
+    fn test_has_right_leaning_red_links() {
+        let link = link_2();
+        assert!(!link.has_right_leaning_red_links());
 
         let link = ColoredLink {
             color: Black,
@@ -231,7 +237,7 @@ mod tests {
                     right: Box::new(End)
                 }),
                 right: Box::new(ColoredLink {
-                    color: Black,
+                    color: Red,
                     value: 25,
                     left: Box::new(End),
                     right: Box::new(End)
@@ -244,10 +250,8 @@ mod tests {
                 right: Box::new(End)
             })
         };
-
-        let total_depth = link.total_depth();
-        assert_eq!(total_depth, 3..4);
+        
+        assert!(link.has_right_leaning_red_links());
     }
-
 }
 
