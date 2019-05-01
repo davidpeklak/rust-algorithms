@@ -3,6 +3,8 @@
 
 use self::Color::{Red, Black};
 use self::Link::{ColoredLink, End};
+use std::ops::Range;
+use std::cmp;
 
 #[derive(Eq, PartialEq, Debug)]
 enum Color {
@@ -42,6 +44,25 @@ impl<Item> Link<Item>
                         ColoredLink { value: right_value, .. } => *value < *right_value && left.is_bst()
                     }
                 )
+            }
+        }
+    }
+
+    /// returns the number of black links found under the node, as a range The start of the range is the
+    /// lowest depth found, the end of the range minus one is the highest depth found.
+    #[cfg(test)]
+    fn black_depth(&self) -> Range<usize> {
+        match &self {
+            End => 0..1,
+            ColoredLink { color: Black, left, right, .. } => {
+                let left_depth = left.black_depth();
+                let right_depth = right.black_depth();
+                cmp::min(left_depth.start, left_depth.start) + 1 .. cmp::max(left_depth.end, right_depth.end) + 1
+            },
+            ColoredLink { color: Red, left, right, .. } => {
+                let left_depth = left.black_depth();
+                let right_depth = right.black_depth();
+                cmp::min(left_depth.start, left_depth.start) .. cmp::max(left_depth.end, right_depth.end)
             }
         }
     }
@@ -96,6 +117,64 @@ mod tests {
         };
 
         assert!(!link.is_bst(), "{:?}", link);
+    }
+
+    #[test]
+    fn test_black_depth() {
+        let link = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(ColoredLink {
+                    color: Black,
+                    value: 25,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                })
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        };
+
+        let black_depth = link.black_depth();
+        assert_eq!(black_depth, 1..3);
+
+        let link = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(ColoredLink {
+                    color: Black,
+                    value: 18,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                }),
+                right: Box::new(ColoredLink {
+                    color: Black,
+                    value: 25,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                })
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        };
+
+        let black_depth = link.black_depth();
+        assert_eq!(black_depth, 2..3);
     }
 
 }
