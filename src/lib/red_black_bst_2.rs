@@ -66,6 +66,20 @@ impl<Item> Link<Item>
             }
         }
     }
+
+    /// returns the number of links (of whatever color) found under the node, as a range The start of the range is the
+    /// lowest depth found, the end of the range minus one is the highest depth found.
+    #[cfg(test)]
+    fn total_depth(&self) -> Range<usize> {
+        match &self {
+            End => 0..1,
+            ColoredLink { left, right, .. } => {
+                let left_depth = left.total_depth();
+                let right_depth = right.total_depth();
+                cmp::min(left_depth.start, left_depth.start) + 1 .. cmp::max(left_depth.end, right_depth.end) + 1
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -175,6 +189,64 @@ mod tests {
 
         let black_depth = link.black_depth();
         assert_eq!(black_depth, 2..3);
+    }
+
+    #[test]
+    fn test_total_depth() {
+        let link = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(ColoredLink {
+                    color: Black,
+                    value: 25,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                })
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        };
+
+        let total_depth = link.total_depth();
+        assert_eq!(total_depth, 2..4);
+
+        let link = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(ColoredLink {
+                    color: Black,
+                    value: 18,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                }),
+                right: Box::new(ColoredLink {
+                    color: Black,
+                    value: 25,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                })
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        };
+
+        let total_depth = link.total_depth();
+        assert_eq!(total_depth, 3..4);
     }
 
 }
