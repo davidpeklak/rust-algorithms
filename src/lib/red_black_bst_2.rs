@@ -26,6 +26,44 @@ enum Link<Item> {
 impl<Item> Link<Item>
     where Item: PartialOrd {
 
+    fn rotate_left(self) -> Link<Item> {
+        if let ColoredLink {
+            color,
+            value: top_value,
+            left,
+            right
+        } = self {
+            let right = *right;
+            if let ColoredLink {
+                color: Red,
+                value: right_value,
+                left: middle,
+                right
+            } = right {
+                ColoredLink {
+                    color,
+                    value: right_value,
+                    left: Box::new(ColoredLink {
+                        color: Red,
+                        value: top_value,
+                        left,
+                        right: middle,
+                    }),
+                    right,
+                }
+            } else {
+                ColoredLink {
+                    color,
+                    value: top_value,
+                    left,
+                    right: Box::new(right),
+                }
+            }
+        } else {
+            self
+        }
+    }
+
     /// tests if the link is the top of a binary search tree, i.e. if the left of each node is
     /// lower than the node itself, and if the rigth of each node is greater than the node itself
     #[cfg(test)]
@@ -311,6 +349,46 @@ mod tests {
         };
 
         assert!(link.has_consecutive_red_links());
+    }
+
+    #[test]
+    fn test_rotate_left() {
+        let mut link = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Black,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(End),
+            }),
+            right: Box::new(ColoredLink {
+                color: Red,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End),
+            }),
+        };
+
+        let link = link.rotate_left();
+
+        let expectation = ColoredLink {
+            color: Black,
+            value: 40,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 32,
+                left: Box::new(ColoredLink {
+                    color: Black,
+                    value: 20,
+                    left: Box::new(End),
+                    right: Box::new(End),
+                 }),
+                right: Box::new(End),
+            }),
+            right: Box::new(End)
+        };
+        assert_eq!(expectation, link);
     }
 }
 
