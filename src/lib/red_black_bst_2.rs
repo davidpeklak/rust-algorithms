@@ -104,6 +104,30 @@ impl<Item> Link<Item>
             }
         }
     }
+
+    /// checks if the link has any consecutive red links under it
+    #[cfg(test)]
+    fn has_consecutive_red_links(&self) -> bool {
+        match &self {
+            End => false,
+
+            ColoredLink { color: Red, left, right, .. } =>
+                (
+                    match left.as_ref() {
+                        ColoredLink { color: Red, .. } => true,
+                        _ => false
+                    }
+                ) || (
+                    match right.as_ref() {
+                        ColoredLink { color: Red, .. } => true,
+                        _ => false
+                    }
+                ) || left.has_consecutive_red_links() || right.has_consecutive_red_links(),
+
+            ColoredLink { left, right, .. } =>
+                left.has_consecutive_red_links() || right.has_consecutive_red_links()
+        }
+    }
 }
 
 #[cfg(test)]
@@ -250,8 +274,43 @@ mod tests {
                 right: Box::new(End)
             })
         };
-        
+
         assert!(link.has_right_leaning_red_links());
+    }
+
+    #[test]
+    fn test_has_consecutive_red_links() {
+        let link = link_1();
+        assert!(!link.has_consecutive_red_links());
+
+        let link = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(ColoredLink {
+                    color: Red,
+                    value: 18,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                }),
+                right: Box::new(ColoredLink {
+                    color: Black,
+                    value: 25,
+                    left: Box::new(End),
+                    right: Box::new(End)
+                })
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        };
+
+        assert!(link.has_consecutive_red_links());
     }
 }
 
