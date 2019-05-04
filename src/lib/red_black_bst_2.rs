@@ -40,6 +40,7 @@ impl<Item> Link<Item>
                 left: middle,
                 right
             } = right {
+                // construct the rotated link
                 ColoredLink {
                     color,
                     value: right_value,
@@ -52,11 +53,73 @@ impl<Item> Link<Item>
                     right,
                 }
             } else {
+                // the second pattern does not match, so we need to re-construct the first one,
+                // because we already de-constructed it
                 ColoredLink {
                     color,
                     value: top_value,
                     left,
                     right: Box::new(right),
+                }
+            }
+        } else {
+            self
+        }
+    }
+
+    fn rotate_right(self) -> Link<Item> {
+        if let ColoredLink {
+            color,
+            value: top_value,
+            left,
+            right
+        } = self {
+            let left = *left;
+            if let ColoredLink {
+                color: Red,
+                value: left_value,
+                left,
+                right: middle
+            } = left {
+                match left.as_ref() { // we are only checking the color of the link here, so we can match on its ref and do not need to deconstruct
+                    ColoredLink { color: Red, .. } => {
+                        // construct the rotated link
+                        ColoredLink {
+                            color,
+                            value: left_value,
+                            left,
+                            right: Box::new(ColoredLink {
+                                color: Red,
+                                value: top_value,
+                                left: middle,
+                                right,
+                            }),
+                        }
+                    },
+                    _ => {
+                        // the third pattern (the red color of the link) does not match, so we need to re-construct the first one,
+                        // because we already de-constructed it
+                        ColoredLink {
+                            color,
+                            value: top_value,
+                            left: Box::new(ColoredLink {
+                                color: Red,
+                                value: left_value,
+                                left,
+                                right: middle,
+                            }),
+                            right,
+                        }
+                    }
+                }
+            } else {
+                // the second pattern does not match, so we need to re-construct the first one,
+                // because we already de-constructed it
+                ColoredLink {
+                    color,
+                    value: top_value,
+                    left: Box::new(left),
+                    right,
                 }
             }
         } else {
@@ -353,7 +416,7 @@ mod tests {
 
     #[test]
     fn test_rotate_left() {
-        let mut link = ColoredLink {
+        let link = ColoredLink {
             color: Black,
             value: 32,
             left: Box::new(ColoredLink {
@@ -387,6 +450,46 @@ mod tests {
                 right: Box::new(End),
             }),
             right: Box::new(End)
+        };
+        assert_eq!(expectation, link);
+    }
+
+    #[test]
+    fn test_rotate_right() {
+        let link = ColoredLink {
+            color: Black,
+            value: 40,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 32,
+                left: Box::new(ColoredLink {
+                    color: Red,
+                    value: 20,
+                    left: Box::new(End),
+                    right: Box::new(End),
+                }),
+                right: Box::new(End),
+            }),
+            right: Box::new(End),
+        };
+
+        let link = link.rotate_right();
+
+        let expectation = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(End),
+            }),
+            right: Box::new(ColoredLink {
+                color: Red,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End),
+            }),
         };
         assert_eq!(expectation, link);
     }
