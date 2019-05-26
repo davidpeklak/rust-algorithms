@@ -9,7 +9,7 @@ use std::cmp;
 #[derive(Eq, PartialEq, Debug)]
 enum Color {
     Red,
-    Black
+    Black,
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -19,13 +19,12 @@ enum Link<Item> {
         color: Color,
         value: Item,
         left: Box<Link<Item>>,
-        right: Box<Link<Item>>
-    }
+        right: Box<Link<Item>>,
+    },
 }
 
 impl<Item> Link<Item>
     where Item: PartialOrd {
-
     fn rotate_left(self) -> Link<Item> {
         if let ColoredLink {
             color,
@@ -95,7 +94,7 @@ impl<Item> Link<Item>
                                 right,
                             }),
                         }
-                    },
+                    }
                     _ => {
                         // the third pattern (the red color of the link) does not match, so we need to re-construct the first one,
                         // because we already de-constructed it
@@ -122,6 +121,96 @@ impl<Item> Link<Item>
                     right,
                 }
             }
+        } else {
+            self
+        }
+    }
+
+    fn color_flip(self) -> Link<Item> {
+        if let ColoredLink {
+            color: Black,
+            value,
+            mut left,
+            mut right
+        } = self {
+            let left = *left;
+            let right = *right;
+
+            match (left, right) {
+                (ColoredLink {
+                    color: Red,
+                    value: left_value,
+                    left: left_left,
+                    right: left_right,
+                }, ColoredLink {
+                    color: Red,
+                    value: right_value,
+                    left: right_left,
+                    right: right_right,
+                }) => {
+                    ColoredLink {
+                        color: Red,
+                        value,
+                        left: Box::new(ColoredLink {
+                            color: Black,
+                            value: left_value,
+                            left: left_left,
+                            right: left_right,
+                        }),
+                        right: Box::new(ColoredLink {
+                            color: Black,
+                            value: right_value,
+                            left: right_left,
+                            right: right_right,
+                        }),
+                    }
+                }
+                (l, r) => ColoredLink {
+                    color: Black,
+                    value,
+                    left: Box::new(l),
+                    right: Box::new(r),
+                }
+            }
+
+            /*if left.color == Red && right.color == Red {
+                let ColoredLink {
+                    value: left_value,
+                    left: left_left,
+                    right: left_right,
+                    ..
+                } = left;
+                let ColoredLink {
+                    value: right_value,
+                    left: right_left,
+                    right: right_right,
+                    ..
+                } = right;
+
+                ColoredLink {
+                    color: Red,
+                    value,
+                    left: Box::new(ColoredLink {
+                        color: Black,
+                        value: left_value,
+                        left: left_left,
+                        right: left_right,
+                    }),
+                    right: Box::new(ColoredLink {
+                        color: Black,
+                        value: right_value,
+                        left: right_left,
+                        right: right_right,
+                    }),
+                }
+            } else {
+                ColoredLink {
+                    color: Red,
+                    value,
+                    left: Box::new(left),
+                    right: Box::new(right),
+                }
+            }*/
         } else {
             self
         }
@@ -158,12 +247,12 @@ impl<Item> Link<Item>
             ColoredLink { color: Black, left, right, .. } => {
                 let left_depth = left.black_depth();
                 let right_depth = right.black_depth();
-                cmp::min(left_depth.start, left_depth.start) + 1 .. cmp::max(left_depth.end, right_depth.end) + 1
-            },
+                cmp::min(left_depth.start, left_depth.start) + 1..cmp::max(left_depth.end, right_depth.end) + 1
+            }
             ColoredLink { color: Red, left, right, .. } => {
                 let left_depth = left.black_depth();
                 let right_depth = right.black_depth();
-                cmp::min(left_depth.start, left_depth.start) .. cmp::max(left_depth.end, right_depth.end)
+                cmp::min(left_depth.start, left_depth.start)..cmp::max(left_depth.end, right_depth.end)
             }
         }
     }
@@ -177,7 +266,7 @@ impl<Item> Link<Item>
             ColoredLink { left, right, .. } => {
                 let left_depth = left.total_depth();
                 let right_depth = right.total_depth();
-                cmp::min(left_depth.start, left_depth.start) + 1 .. cmp::max(left_depth.end, right_depth.end) + 1
+                cmp::min(left_depth.start, left_depth.start) + 1..cmp::max(left_depth.end, right_depth.end) + 1
             }
         }
     }
@@ -250,15 +339,15 @@ mod tests {
                     color: Black,
                     value: 25,
                     left: Box::new(End),
-                    right: Box::new(End)
-                })
+                    right: Box::new(End),
+                }),
             }),
             right: Box::new(ColoredLink {
                 color: Black,
                 value: 40,
                 left: Box::new(End),
-                right: Box::new(End)
-            })
+                right: Box::new(End),
+            }),
         }
     }
 
@@ -274,21 +363,21 @@ mod tests {
                     color: Black,
                     value: 18,
                     left: Box::new(End),
-                    right: Box::new(End)
+                    right: Box::new(End),
                 }),
                 right: Box::new(ColoredLink {
                     color: Black,
                     value: 25,
                     left: Box::new(End),
-                    right: Box::new(End)
-                })
+                    right: Box::new(End),
+                }),
             }),
             right: Box::new(ColoredLink {
                 color: Black,
                 value: 40,
                 left: Box::new(End),
-                right: Box::new(End)
-            })
+                right: Box::new(End),
+            }),
         }
     }
 
@@ -305,14 +394,14 @@ mod tests {
                 color: Red,
                 value: 40,
                 left: Box::new(End),
-                right: Box::new(End)
+                right: Box::new(End),
             }),
             right: Box::new(ColoredLink {
                 color: Black,
                 value: 40,
                 left: Box::new(End),
-                right: Box::new(End)
-            })
+                right: Box::new(End),
+            }),
         };
 
         assert!(!link.is_bst(), "{:?}", link);
@@ -359,21 +448,21 @@ mod tests {
                     color: Black,
                     value: 18,
                     left: Box::new(End),
-                    right: Box::new(End)
+                    right: Box::new(End),
                 }),
                 right: Box::new(ColoredLink {
                     color: Red,
                     value: 25,
                     left: Box::new(End),
-                    right: Box::new(End)
-                })
+                    right: Box::new(End),
+                }),
             }),
             right: Box::new(ColoredLink {
                 color: Black,
                 value: 40,
                 left: Box::new(End),
-                right: Box::new(End)
-            })
+                right: Box::new(End),
+            }),
         };
 
         assert!(link.has_right_leaning_red_links());
@@ -394,21 +483,21 @@ mod tests {
                     color: Red,
                     value: 18,
                     left: Box::new(End),
-                    right: Box::new(End)
+                    right: Box::new(End),
                 }),
                 right: Box::new(ColoredLink {
                     color: Black,
                     value: 25,
                     left: Box::new(End),
-                    right: Box::new(End)
-                })
+                    right: Box::new(End),
+                }),
             }),
             right: Box::new(ColoredLink {
                 color: Black,
                 value: 40,
                 left: Box::new(End),
-                right: Box::new(End)
-            })
+                right: Box::new(End),
+            }),
         };
 
         assert!(link.has_consecutive_red_links());
@@ -446,10 +535,10 @@ mod tests {
                     value: 20,
                     left: Box::new(End),
                     right: Box::new(End),
-                 }),
+                }),
                 right: Box::new(End),
             }),
-            right: Box::new(End)
+            right: Box::new(End),
         };
         assert_eq!(expectation, link);
     }
@@ -492,6 +581,85 @@ mod tests {
             }),
         };
         assert_eq!(expectation, link);
+    }
+
+    #[test]
+    fn test_color_flip() {
+        let link = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(End)
+            }),
+            right: Box::new(ColoredLink {
+                color: Red,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        };
+
+        let link = link.color_flip();
+
+        let expectation = ColoredLink {
+            color: Red,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Black,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(End)
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        };
+
+        assert_eq!(link, expectation);
+
+        let link = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(End)
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        };
+
+        let link = link.color_flip();
+
+        let expectation = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(End)
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End)
+            })
+        };
+
+        assert_eq!(link, expectation);
     }
 }
 
