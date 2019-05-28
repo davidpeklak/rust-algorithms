@@ -25,6 +25,70 @@ enum Link<Item> {
 
 impl<Item> Link<Item>
     where Item: PartialOrd {
+
+    fn insert(self, value: Item) -> Link<Item> {
+        match self {
+            End => ColoredLink {
+                color: Red,
+                value,
+                left: Box::new(End),
+                right: Box::new(End),
+            },
+            ColoredLink {
+                color,
+                value: self_value,
+                left,
+                right
+            } => {
+                (
+                    if value > self_value {
+                        ColoredLink {
+                            color,
+                            value: self_value,
+                            left,
+                            right: Box::new(right.insert(value)),
+                        }
+                    } else if value < self_value {
+                        ColoredLink {
+                            color,
+                            value: self_value,
+                            left: Box::new(left.insert(value)),
+                            right,
+                        }
+                    } else {
+                        ColoredLink {
+                            color,
+                            value: self_value,
+                            left,
+                            right,
+                        }
+                    }
+                )
+                    .rotate_left()
+                    .rotate_right()
+                    .color_flip()
+            }
+        }
+    }
+
+    // make a ColoredLink black. Used for the top of the tree
+    fn make_black(self) -> Link<Item> {
+        match self {
+            End => End,
+            ColoredLink {
+                value,
+                left,
+                right,
+                ..
+            } => ColoredLink {
+                color: Black,
+                value,
+                left,
+                right
+            }
+        }
+    }
+
     fn rotate_left(self) -> Link<Item> {
         if let ColoredLink {
             color,
@@ -660,6 +724,75 @@ mod tests {
         };
 
         assert_eq!(link, expectation);
+    }
+
+    #[test]
+    fn test_insert_1() {
+        let result = End
+            .insert(32)
+            .make_black();
+
+        let expectation = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(End),
+            right: Box::new(End)
+        };
+
+        assert_eq!(expectation, result);
+    }
+
+    #[test]
+    fn test_insert_2() {
+        let result = End
+            .insert(32)
+            .make_black()
+            .insert(20)
+            .make_black();
+
+        let expectation = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Red,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(End),
+            }),
+            right: Box::new(End),
+        };
+
+        assert_eq!(expectation, result);
+    }
+
+    #[test]
+    fn test_insert_3() {
+        let result = End
+            .insert(32)
+            .make_black()
+            .insert(20)
+            .make_black()
+            .insert(40)
+            .make_black();
+
+        let expectation = ColoredLink {
+            color: Black,
+            value: 32,
+            left: Box::new(ColoredLink {
+                color: Black,
+                value: 20,
+                left: Box::new(End),
+                right: Box::new(End),
+            }),
+            right: Box::new(ColoredLink {
+                color: Black,
+                value: 40,
+                left: Box::new(End),
+                right: Box::new(End),
+            }),
+        };
+
+        assert_eq!(expectation, result);
     }
 }
 
