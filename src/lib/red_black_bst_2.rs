@@ -30,6 +30,11 @@ impl<Item> Tree<Item>
     pub fn size(&self) -> usize {
         self.top.size()
     }
+
+
+    pub fn contains(&self, value: &Item) -> bool {
+        self.top.contains(value)
+    }
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -105,6 +110,18 @@ impl<Item> Link<Item>
                 right,
                 ..
             } => left.size() + right.size() + 1
+        }
+    }
+
+    fn contains(&self, value: &Item) -> bool {
+        match self {
+            End => false,
+            ColoredLink {
+                value: self_value,
+                left,
+                right,
+                ..
+            } => value == self_value || left.contains(value) || right.contains(value)
         }
     }
 
@@ -821,6 +838,19 @@ mod tests {
         tree.insert(45);
 
         assert_eq!(3, tree.size());
+    }
+
+    #[test]
+    fn test_contains() {
+        let mut tree = Tree::<i32>::new();
+        tree.insert(32);
+        tree.insert(20);
+        tree.insert(45);
+
+        assert!(tree.contains(&32));
+        assert!(tree.contains(&20));
+        assert!(tree.contains(&45));
+        assert!(!tree.contains(&123));
     }
 }
 
