@@ -35,6 +35,10 @@ impl<Item> Tree<Item>
     pub fn contains(&self, value: &Item) -> bool {
         self.top.contains(value)
     }
+
+    pub fn iter(&self) -> Iter<Item> {
+        Iter::new(&self.top)
+    }
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -395,6 +399,75 @@ impl<Item> Link<Item>
 
             ColoredLink { left, right, .. } =>
                 left.has_consecutive_red_links() || right.has_consecutive_red_links()
+        }
+    }
+}
+
+pub struct Iter<'a, Item> {
+  link_path: Vec<&'a Link<Item>>
+}
+
+impl<'a, Item> Iter<'a, Item> {
+    fn new(tree: &'a Link<Item>) -> Iter<'a, Item> {
+        let mut link_path: Vec<&'a Link<Item>> = vec!();
+        let mut link = tree;
+        let mut done = false;
+
+        while !done {
+            match link {
+                End => {
+                    done = true;
+                },
+                ColoredLink{
+                    left,
+                    ..
+                } => {
+                    link_path.push(link);
+                    link = left.as_ref();
+                }
+            }
+        }
+
+        Iter {
+            link_path
+        }
+    }
+}
+
+impl<'a, Item> Iterator for Iter<'a, Item> {
+    type Item = &'a Item;
+
+    fn next(&mut self) -> Option<&'a Item> {
+        let tail = self.link_path.pop();
+        match tail {
+            None => None,
+            Some(ColoredLink {
+                     value,
+                     right,
+                     ..
+                 }) => {
+                let mut link = right.as_ref();
+
+                let mut done = false;
+
+                while !done {
+                    match link {
+                        End => {
+                            done = true;
+                        },
+                        ColoredLink{
+                            left,
+                            ..
+                        } => {
+                            self.link_path.push(link);
+                            link = left.as_ref();
+                        }
+                    }
+                }
+
+                Some(value)
+            }
+            _ => unreachable!() // because the vector is only populated with ColoredLinks
         }
     }
 }
@@ -851,6 +924,21 @@ mod tests {
         assert!(tree.contains(&20));
         assert!(tree.contains(&45));
         assert!(!tree.contains(&123));
+    }
+
+    #[test]
+    fn test_iter() {
+        let mut tree = Tree::<i32>::new();
+        tree.insert(32);
+        tree.insert(20);
+        tree.insert(45);
+
+        let mut iter = tree.iter();
+
+        assert_eq!(Some(&20), iter.next());
+        assert_eq!(Some(&32), iter.next());
+        assert_eq!(Some(&45), iter.next());
+        assert_eq!(None, iter.next());
     }
 }
 
