@@ -5,6 +5,21 @@ use self::Color::{Red, Black};
 use self::Link::{ColoredLink, End};
 use std::ops::Range;
 use std::cmp;
+use std::mem;
+
+pub struct Tree<Item> {
+    top: Link<Item>
+}
+
+impl<Item> Tree<Item>
+    where Item: PartialOrd {
+    pub fn insert(&mut self, value: Item) {
+        let top = mem::replace(&mut self.top, End);
+        let top = top.insert(value);
+        let top = top.make_black();
+        mem::replace(&mut self.top, top);
+    }
+}
 
 #[derive(Eq, PartialEq, Debug)]
 enum Color {
@@ -194,8 +209,8 @@ impl<Item> Link<Item>
         if let ColoredLink {
             color: Black,
             value,
-            mut left,
-            mut right
+            left,
+            right
         } = self {
             let left = *left;
             let right = *right;
@@ -236,45 +251,6 @@ impl<Item> Link<Item>
                     right: Box::new(r),
                 }
             }
-
-            /*if left.color == Red && right.color == Red {
-                let ColoredLink {
-                    value: left_value,
-                    left: left_left,
-                    right: left_right,
-                    ..
-                } = left;
-                let ColoredLink {
-                    value: right_value,
-                    left: right_left,
-                    right: right_right,
-                    ..
-                } = right;
-
-                ColoredLink {
-                    color: Red,
-                    value,
-                    left: Box::new(ColoredLink {
-                        color: Black,
-                        value: left_value,
-                        left: left_left,
-                        right: left_right,
-                    }),
-                    right: Box::new(ColoredLink {
-                        color: Black,
-                        value: right_value,
-                        left: right_left,
-                        right: right_right,
-                    }),
-                }
-            } else {
-                ColoredLink {
-                    color: Red,
-                    value,
-                    left: Box::new(left),
-                    right: Box::new(right),
-                }
-            }*/
         } else {
             self
         }
@@ -389,6 +365,7 @@ mod tests {
     use super::Link;
     use super::Link::{ColoredLink, End};
     use super::Color::{Black, Red};
+    use rand::{thread_rng, Rng};
 
     /// returns an exemplary tree that is used in various tests
     fn link_1() -> Link<i32> {
@@ -793,6 +770,25 @@ mod tests {
         };
 
         assert_eq!(expectation, result);
+    }
+
+    #[test]
+    fn multiple_insertion_results_in_bst() {
+        let mut tree: Link<i32> = End;
+        let mut rng = thread_rng();
+
+        let number_of_items = 20;
+
+        for _ in 0..number_of_items {
+            let new_value: i32 = rng.gen_range(0, 100);
+            tree = tree.insert(new_value);
+            tree = tree.make_black();
+        }
+
+        assert!(tree.is_bst(), "{:?}", tree);
+        assert!(tree.is_black_balanced(), "{:?}", tree);
+        assert!(!tree.has_right_leaning_red_links(), "{:?}", tree);
+        assert!(!tree.has_consecutive_red_links(), "{:?}", tree);
     }
 }
 
