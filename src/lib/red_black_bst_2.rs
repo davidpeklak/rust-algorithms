@@ -13,11 +13,22 @@ pub struct Tree<Item> {
 
 impl<Item> Tree<Item>
     where Item: PartialOrd {
+
+    pub fn new() -> Tree<Item> {
+        Tree {
+            top: End,
+        }
+    }
+
     pub fn insert(&mut self, value: Item) {
         let top = mem::replace(&mut self.top, End);
         let top = top.insert(value);
         let top = top.make_black();
         mem::replace(&mut self.top, top);
+    }
+
+    pub fn size(&self) -> usize {
+        self.top.size()
     }
 }
 
@@ -83,6 +94,17 @@ impl<Item> Link<Item>
                     .rotate_right()
                     .color_flip()
             }
+        }
+    }
+
+    fn size(&self) -> usize {
+        match self {
+            End => 0,
+            ColoredLink {
+                left,
+                right,
+                ..
+            } => left.size() + right.size() + 1
         }
     }
 
@@ -362,7 +384,7 @@ impl<Item> Link<Item>
 
 #[cfg(test)]
 mod tests {
-    use super::Link;
+    use super::{Tree, Link};
     use super::Link::{ColoredLink, End};
     use super::Color::{Black, Red};
     use rand::{thread_rng, Rng};
@@ -789,6 +811,16 @@ mod tests {
         assert!(tree.is_black_balanced(), "{:?}", tree);
         assert!(!tree.has_right_leaning_red_links(), "{:?}", tree);
         assert!(!tree.has_consecutive_red_links(), "{:?}", tree);
+    }
+
+    #[test]
+    fn test_size() {
+        let mut tree = Tree::<i32>::new();
+        tree.insert(32);
+        tree.insert(20);
+        tree.insert(45);
+
+        assert_eq!(3, tree.size());
     }
 }
 
