@@ -6,6 +6,7 @@ use self::Link::{ColoredLink, End};
 use std::ops::Range;
 use std::cmp;
 use std::mem;
+use std::iter::FromIterator;
 
 pub struct Tree<Item> {
     top: Link<Item>
@@ -38,6 +39,30 @@ impl<Item> Tree<Item>
 
     pub fn iter(&self) -> Iter<Item> {
         Iter::new(&self.top)
+    }
+}
+
+impl<A> FromIterator<A> for Tree<A>
+    where A: PartialOrd {
+
+    fn from_iter<T>(iter: T) -> Tree<A>
+        where T: IntoIterator<Item=A> {
+
+        let mut tree = Tree::<A>::new();
+        for val in iter {
+            tree.insert(val);
+        }
+
+        tree
+    }
+}
+
+impl<A> IntoIterator for Tree<A> {
+    type Item = A;
+    type IntoIter = IntoIter<A>;
+
+    fn into_iter(self) -> IntoIter<A> {
+        IntoIter::new(self.top)
     }
 }
 
@@ -461,6 +486,91 @@ impl<'a, Item> Iterator for Iter<'a, Item> {
                         } => {
                             self.link_path.push(link);
                             link = left.as_ref();
+                        }
+                    }
+                }
+
+                Some(value)
+            }
+            _ => unreachable!() // because the vector is only populated with ColoredLinks
+        }
+    }
+}
+
+pub struct IntoIter<Item> {
+    link_path: Vec<Link<Item>>
+}
+
+impl<Item> IntoIter<Item> {
+    fn new(tree: Link<Item>) -> IntoIter<Item> {
+        let mut link_path: Vec<Link<Item>> = vec!();
+        let mut link = tree;
+        let mut done = false;
+
+        while !done {
+            match link {
+                End => {
+                    done = true;
+                },
+                ColoredLink{
+                    value,
+                    left,
+                    right,
+                    ..
+                } => {
+                    let vector_elem = ColoredLink {
+                        color: Black, // irrelevant
+                        value,
+                        left: Box::new(End), // we want to own the original left, so we put an End here instead
+                        right
+                    };
+                    link_path.push(vector_elem);
+                    link = *left;
+                }
+            }
+        }
+
+        IntoIter {
+            link_path
+        }
+    }
+}
+
+impl<Item> Iterator for IntoIter<Item> {
+    type Item = Item;
+
+    fn next(&mut self) -> Option<Item> {
+        let tail = self.link_path.pop();
+        match tail {
+            None => None,
+            Some(ColoredLink {
+                     value,
+                     right,
+                     .. // the color is irrelevant, and left will always be End per construction
+                 }) => {
+                let mut link = *right;
+
+                let mut done = false;
+
+                while !done {
+                    match link {
+                        End => {
+                            done = true;
+                        },
+                        ColoredLink{
+                            value,
+                            left,
+                            right,
+                            ..
+                        } => {
+                            let vector_elem = ColoredLink {
+                                color: Black, // irrelevant
+                                value,
+                                left: Box::new(End), // we want to own the original left, so we put an End here instead
+                                right
+                            };
+                            self.link_path.push(vector_elem);
+                            link = *left;
                         }
                     }
                 }
@@ -939,6 +1049,28 @@ mod tests {
         assert_eq!(Some(&32), iter.next());
         assert_eq!(Some(&45), iter.next());
         assert_eq!(None, iter.next());
+    }
+
+    #[test]
+    fn test_from_iter() {
+        let tree: Tree<i32> = vec![32, 20, 45].into_iter().collect();
+
+        assert!(tree.contains(&32));
+        assert!(tree.contains(&20));
+        assert!(tree.contains(&45));
+        assert!(!tree.contains(&123));
+    }
+
+    #[test]
+    fn test_into_iter() {
+        let mut tree = Tree::<i32>::new();
+        tree.insert(32);
+        tree.insert(20);
+        tree.insert(45);
+
+        let vec: Vec<i32> = tree.into_iter().collect();
+
+        assert_eq!(vec![20, 32, 45], vec);
     }
 }
 
