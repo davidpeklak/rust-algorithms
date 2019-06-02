@@ -1089,4 +1089,3 @@ mod tests {
         assert_eq!((0..99).collect::<Vec<i32>>(), result);
     }
 }
-
