@@ -588,6 +588,7 @@ mod tests {
     use super::Link::{ColoredLink, End};
     use super::Color::{Black, Red};
     use rand::{thread_rng, Rng};
+    use knuth_shuffle::knuth_shuffle;
 
     /// returns an exemplary tree that is used in various tests
     fn link_1() -> Link<i32> {
@@ -1071,6 +1072,21 @@ mod tests {
         let vec: Vec<i32> = tree.into_iter().collect();
 
         assert_eq!(vec![20, 32, 45], vec);
+    }
+
+    #[test]
+    fn test_big_tree() {
+        let mut rng = thread_rng();
+
+        let mut vec: Vec<i32> = (0..99).collect();
+
+        knuth_shuffle(&mut vec, &mut rng);
+
+        let tree: Tree<i32> = vec.into_iter().collect();
+
+        let result: Vec<i32> = tree.into_iter().collect();
+
+        assert_eq!((0..99).collect::<Vec<i32>>(), result);
     }
 }
 
