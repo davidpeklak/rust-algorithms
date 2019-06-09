@@ -39,5 +39,7 @@ pub mod red_black_bst;
 
 pub mod red_black_bst_2;
 
+pub mod graph;
+
 #[cfg(test)]
 pub mod is_sorted;
