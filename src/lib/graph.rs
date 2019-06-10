@@ -1,6 +1,6 @@
 //! Implements a graph as described in the course.
 
-trait Graph<'a> {
+pub trait Graph<'a> {
     type AdjIter: Iterator<Item=&'a usize>;
 
     fn new(number_of_vertices: usize) -> Self;
@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_number_of_vertices() {
-        let mut g: Vec<Vec<usize>> = Graph::new(4);
+        let g: Vec<Vec<usize>> = Graph::new(4);
 
         assert_eq!(4, g.number_of_vertices());
     }

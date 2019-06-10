@@ -35,11 +35,11 @@ pub mod quick_sort;
 
 pub mod max_pq;
 
-pub mod red_black_bst;
-
 pub mod red_black_bst_2;
 
 pub mod graph;
+
+pub mod graph_alg;
 
 #[cfg(test)]
 pub mod is_sorted;

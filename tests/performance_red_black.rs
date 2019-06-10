@@ -22,7 +22,7 @@ impl PerformanceObservable for TreeWrap {
         }
     }
 
-    fn run(&mut self, size: usize, rng: &mut ThreadRng) {
+    fn run(&mut self, _size: usize, rng: &mut ThreadRng) {
         for _ in 0..2000 {
             self.tree.insert(rng.gen());
         }
