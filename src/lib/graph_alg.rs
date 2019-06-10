@@ -2,27 +2,13 @@
 
 use graph::Graph;
 
-trait Paths<'a> {
-    fn has_path(&'a self, v: usize, w: usize) -> bool;
+pub trait Paths {
+    fn is_visited(&self, u: usize) -> bool;
 
-    fn path(&'a self, v: usize, w: usize) -> Option<Vec<usize>>;
+    fn path_to(&self, v: usize) -> Option<Vec<usize>>;
 }
 
-impl<'a, G> Paths<'a> for G
-  where G: Graph<'a> {
-
-    fn has_path(&'a self, v: usize, w: usize) -> bool {
-        let dfp = DepthFirstPaths::new(self, v);
-        dfp.is_visited(w)
-    }
-
-    fn path(&'a self, v: usize, w: usize) -> Option<Vec<usize>> {
-        let dfp = DepthFirstPaths::new(self, v);
-        dfp.path_to(w)
-    }
-}
-
-struct DepthFirstPaths<'a, G> {
+pub struct DepthFirstPaths<'a, G> {
     graph: &'a G,
     start: usize,
     visited: Vec<bool>,
@@ -32,7 +18,7 @@ struct DepthFirstPaths<'a, G> {
 impl<'a, G> DepthFirstPaths<'a, G>
     where G: Graph<'a> {
 
-    fn new(graph: &'a G, start: usize) -> DepthFirstPaths<'a, G> {
+    pub fn new(graph: &'a G, start: usize) -> DepthFirstPaths<'a, G> {
         let mut dfp = DepthFirstPaths {
             graph,
             start,
@@ -54,6 +40,10 @@ impl<'a, G> DepthFirstPaths<'a, G>
             }
         }
     }
+}
+
+impl<'a, G> Paths for DepthFirstPaths<'a, G>
+    where G: Graph<'a> {
 
     fn is_visited(&self, v: usize) -> bool {
         self.visited[v]
@@ -78,7 +68,7 @@ impl<'a, G> DepthFirstPaths<'a, G>
 #[cfg(test)]
 mod tests {
     use graph::{Graph, GraphImplType};
-    use super::Paths;
+    use super::{Paths, DepthFirstPaths};
 
     fn examplary_graph() -> GraphImplType {
         let mut g: GraphImplType = Graph::new(13);
@@ -106,35 +96,35 @@ mod tests {
     #[test]
     fn test_has_path_to() {
         let graph = examplary_graph();
-        assert!(graph.has_path(0, 3));
-        assert!(graph.has_path(6, 2));
-        assert!(graph.has_path(1, 3));
-        assert!(graph.has_path(5, 1));
+        assert!(DepthFirstPaths::new(&graph, 0).is_visited(3));
+        assert!(DepthFirstPaths::new(&graph, 6).is_visited(2));
+        assert!(DepthFirstPaths::new(&graph,1).is_visited(3));
+        assert!(DepthFirstPaths::new(&graph,5).is_visited(1));
 
-        assert!(!graph.has_path(0, 7));
-        assert!(!graph.has_path(8, 10));
-        assert!(!graph.has_path(2, 9));
-        assert!(!graph.has_path(6, 11));
+        assert!(!DepthFirstPaths::new(&graph,0).is_visited(7));
+        assert!(!DepthFirstPaths::new(&graph,8).is_visited(10));
+        assert!(!DepthFirstPaths::new(&graph,2).is_visited(9));
+        assert!(!DepthFirstPaths::new(&graph,6).is_visited(11));
 
-        assert!(graph.has_path(10, 11));
-        assert!(graph.has_path(10, 10));
+        assert!(DepthFirstPaths::new(&graph,10).is_visited(11));
+        assert!(DepthFirstPaths::new(&graph,10).is_visited(10));
     }
 
     #[test]
     fn test_path() {
         let graph = examplary_graph();
-        assert_eq!(Some(vec!(0)), graph.path(0, 0));
-        assert_eq!(Some(vec!(0, 6, 4, 3)), graph.path(0, 3));
-        assert_eq!(Some(vec!(6, 0, 2)), graph.path(6, 2));
-        assert_eq!(Some(vec!(1, 0, 6, 4, 3)), graph.path(1, 3));
-        assert_eq!(Some(vec!(5, 0, 1)), graph.path(5, 1));
+        assert_eq!(Some(vec!(0)), DepthFirstPaths::new(&graph,0).path_to(0));
+        assert_eq!(Some(vec!(0, 6, 4, 3)), DepthFirstPaths::new(&graph,0).path_to(3));
+        assert_eq!(Some(vec!(6, 0, 2)), DepthFirstPaths::new(&graph,6).path_to(2));
+        assert_eq!(Some(vec!(1, 0, 6, 4, 3)), DepthFirstPaths::new(&graph,1).path_to(3));
+        assert_eq!(Some(vec!(5, 0, 1)), DepthFirstPaths::new(&graph,5).path_to(1));
 
-        assert_eq!(None, graph.path(0, 7));
-        assert_eq!(None, graph.path(8, 10));
-        assert_eq!(None, graph.path(2, 9));
-        assert_eq!(None, graph.path(6, 11));
+        assert_eq!(None, DepthFirstPaths::new(&graph,0).path_to(7));
+        assert_eq!(None, DepthFirstPaths::new(&graph,8).path_to(10));
+        assert_eq!(None, DepthFirstPaths::new(&graph,2).path_to(9));
+        assert_eq!(None, DepthFirstPaths::new(&graph,6).path_to(11));
 
-        assert_eq!(Some(vec!(10, 9, 12, 11)), graph.path(10, 11));
-        assert_eq!(Some(vec!(10)), graph.path(10, 10));
+        assert_eq!(Some(vec!(10, 9, 12, 11)), DepthFirstPaths::new(&graph,10).path_to(11));
+        assert_eq!(Some(vec!(10)), DepthFirstPaths::new(&graph,10).path_to(10));
     }
 }
