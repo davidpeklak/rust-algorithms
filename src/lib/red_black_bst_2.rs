@@ -3,7 +3,9 @@
 
 use self::Color::{Red, Black};
 use self::Link::{ColoredLink, End};
+#[allow(unused_imports)] // I get a warning without this, and an error without the import...
 use std::ops::Range;
+#[allow(unused_imports)] // I get a warning without this, and an error without the import...
 use std::cmp;
 use std::mem;
 use std::iter::FromIterator;

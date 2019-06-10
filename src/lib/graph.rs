@@ -11,7 +11,9 @@ pub trait Graph<'a> {
     fn number_of_edges(&self) -> usize;
 }
 
-impl<'a> Graph<'a> for Vec<Vec<usize>> {
+pub type GraphImplType = Vec<Vec<usize>>;
+
+impl<'a> Graph<'a> for GraphImplType {
 
     type AdjIter = std::slice::Iter<'a, usize>;
 
@@ -44,18 +46,18 @@ impl<'a> Graph<'a> for Vec<Vec<usize>> {
 
 #[cfg(test)]
 mod tests {
-    use super::Graph;
+    use super::{Graph, GraphImplType};
 
     #[test]
     fn test_number_of_vertices() {
-        let g: Vec<Vec<usize>> = Graph::new(4);
+        let g: GraphImplType = Graph::new(4);
 
         assert_eq!(4, g.number_of_vertices());
     }
 
     #[test]
     fn test_number_of_edges() {
-        let mut g: Vec<Vec<usize>> = Graph::new(4);
+        let mut g: GraphImplType = Graph::new(4);
         assert_eq!(0, g.number_of_edges());
 
         g.add_edge(0, 1);
@@ -65,7 +67,7 @@ mod tests {
 
     #[test]
     fn test_adj() {
-        let mut g: Vec<Vec<usize>> = Graph::new(4);
+        let mut g: GraphImplType = Graph::new(4);
 
         g.add_edge(0, 1);
         g.add_edge(0, 2);
